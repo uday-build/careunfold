@@ -76,7 +76,19 @@ Leave `EMAIL_DELIVERY` empty when both Resend values are set. The app then uses 
 
 ## Google
 
-Create an OAuth client in Google Cloud. Set the authorized redirect URI to:
+Google sign-up and sign-in use Google's OAuth 2.0 and OpenID Connect sign-in with the `openid`, `email`, and `profile` scopes. No other Google API needs to be enabled.
+
+1. Open https://console.cloud.google.com and create or choose a project.
+2. Go to Google Auth Platform, then Branding. Set the app name and support email.
+3. Under Audience, choose External. While the app is in Testing, add each Google account that will sign in as a test user.
+4. Under Clients, create an OAuth client with application type Web application.
+5. Add this authorized JavaScript origin:
+
+```text
+http://localhost:3000
+```
+
+6. Add this authorized redirect URI:
 
 ```text
 http://localhost:3000/api/auth/callback/google

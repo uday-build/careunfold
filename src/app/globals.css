@@ -130,6 +130,23 @@ button.secondary, a.secondary {
 
 button.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); cursor: pointer; }
 
+button.google {
+  gap: 0.6rem;
+  background: white;
+  color: var(--ink);
+  border: 1px solid #747775;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button.google:hover { background: #f8f9fa; }
+
+.option h2 { font-size: 1.25rem; margin: 0; }
+
+.divider { display: flex; align-items: center; gap: 0.75rem; color: var(--muted); margin: 0; }
+
+.divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+
 button:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .field-error, .form-error { color: var(--danger); margin: 0; }
