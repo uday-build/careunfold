@@ -1,0 +1,174 @@
+:root {
+  color-scheme: light;
+  --bg: #f3efe6;
+  --bg-accent: #e7f0ec;
+  --ink: #1e1a16;
+  --muted: #5e564c;
+  --line: #d9d0c3;
+  --card: #fffdf8;
+  --accent: #1f5c4d;
+  --accent-ink: #ffffff;
+  --clay: #8c3d2f;
+  --danger: #7d2b2b;
+  --warning: #8a5a12;
+  --ok: #1d5c38;
+  --focus: #0b3f36;
+  --shadow: 0 16px 40px rgba(48, 36, 22, 0.08);
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(31, 92, 77, 0.08), transparent 32rem),
+    var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+a { color: var(--accent); }
+
+a:hover { color: var(--clay); }
+
+.skip {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  background: var(--ink);
+  color: white;
+  padding: 0.6rem 0.8rem;
+  z-index: 10;
+}
+
+.skip:focus { top: 1rem; }
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.shell { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 1.25rem 0 3rem; }
+
+.topbar, .row, .split, .actions, .choice-row { display: flex; gap: 0.75rem; align-items: center; }
+
+.topbar { justify-content: space-between; margin-bottom: 1.5rem; }
+
+.brand { font-family: "Iowan Old Style", Palatino, Georgia, serif; font-size: 1.35rem; color: var(--ink); text-decoration: none; }
+
+.nav { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+.nav a, .button, button, .text-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.55rem 0.95rem;
+  text-decoration: none;
+  font: inherit;
+}
+
+.nav a { color: var(--ink); }
+
+.nav a[aria-current="page"] { background: var(--bg-accent); }
+
+h1, h2, h3 { font-family: "Iowan Old Style", Palatino, Georgia, serif; line-height: 1.15; font-weight: 600; }
+
+h1 { font-size: clamp(2.2rem, 5vw, 4.4rem); margin: 0 0 0.8rem; letter-spacing: -0.03em; }
+
+h2 { font-size: 1.7rem; margin: 0 0 0.4rem; }
+
+.lede, .muted { color: var(--muted); }
+
+.hero, .card, .notice {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.hero { padding: clamp(1.25rem, 4vw, 3rem); }
+
+.grid { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 1rem; }
+
+.card, .notice { padding: 1rem 1.1rem; }
+
+.stack { display: grid; gap: 0.9rem; }
+
+.field { display: grid; gap: 0.35rem; }
+
+label { font-weight: 650; }
+
+input, select, textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  background: white;
+  color: var(--ink);
+}
+
+.button, button.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  cursor: pointer;
+}
+
+button.secondary, a.secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+button.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); cursor: pointer; }
+
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.field-error, .form-error { color: var(--danger); margin: 0; }
+
+.notice { display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: start; }
+
+.mark {
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-top: 0.35rem;
+  border: 2px solid currentColor;
+}
+
+.mark-active { background: var(--ok); color: var(--ok); border-radius: 99px; }
+.mark-pending { background: transparent; color: var(--warning); border-style: dashed; }
+.mark-closed { background: transparent; color: var(--danger); border-style: double; }
+.mark-info { background: var(--accent); color: var(--accent); }
+
+.choice-row { align-items: stretch; flex-wrap: wrap; }
+
+.choice {
+  flex: 1 1 12rem;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+  border-radius: 1rem;
+  padding: 0.8rem;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.choice[aria-pressed="true"] { border-color: var(--accent); background: var(--bg-accent); }
+
+.person-grid, .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+
+@media (max-width: 800px) {
+  .grid, .person-grid, .two, .topbar, .split { display: grid; grid-template-columns: 1fr; }
+  .shell { width: min(100% - 1.25rem, 72rem); }
+}
