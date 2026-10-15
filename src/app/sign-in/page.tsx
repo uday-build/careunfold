@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Notice, Shell } from "@/components/shell";
+import { Shell } from "@/components/app-shell";
+import { Notice } from "@/components/shell";
 import { GoogleButton, SignInForm } from "@/components/auth-forms";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { loadPublicConfig } from "../load";
@@ -14,6 +15,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
     <Shell>
       <section className="hero stack">
         <h1>Sign in</h1>
+        <p className="lede">Use the same Google or email account you registered. If access is still waiting for approval, you will see that next.</p>
         {initialError ? <Notice tone="closed" title="Sign-in did not finish">{initialError}</Notice> : null}
         <section className="option stack" aria-labelledby="google-option">
           <h2 id="google-option">Google</h2>

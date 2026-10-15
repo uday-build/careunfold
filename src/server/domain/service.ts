@@ -29,6 +29,9 @@ import {
   authorizeQueuedRecordJob,
   decidePatientAccess,
   loadJurisdictionPolicy,
+  parseAccessStatus,
+  parseAccountRole,
+  type AccessStatus,
   type Actor,
 } from "./access";
 import {
@@ -60,35 +63,42 @@ type CommandResult = { status: number; body: Record<string, unknown> };
 type OrganizingFor = "self" | "someone_else" | "both";
 type Step = "profile" | "family" | "coverage" | "review" | "complete";
 
-export function homeFor(step: Step, emailVerified: boolean): string {
-  if (!emailVerified) return "/verify-email";
+export function homeFor(
+  step: Step,
+  actor: Pick<Actor, "emailVerified" | "accessStatus">,
+): string {
+  if (!actor.emailVerified) return "/verify-email";
+  if (actor.accessStatus !== "approved") return "/pending-access";
   if (step === "complete") return "/app";
   return `/onboarding/${step}`;
 }
 
 export async function getMe(ctx: AppContext, actor: Actor) {
+  requireVerified(actor);
+  if (actor.accessStatus !== "approved") {
+    return {
+      ok: true,
+      user: publicUser(actor),
+      home: "/pending-access",
+    };
+  }
   const view = await getOnboarding(ctx, actor);
   return {
     ok: true,
-    user: {
-      id: actor.id,
-      email: actor.email,
-      emailVerified: actor.emailVerified,
-      displayName: blankName(actor.name),
-    },
-    home: homeFor(view.onboarding.currentStep, actor.emailVerified),
+    user: publicUser(actor),
+    home: homeFor(view.onboarding.currentStep, actor),
   };
 }
 
 export async function getOnboarding(ctx: AppContext, actor: Actor) {
-  requireVerified(actor);
+  requireApproved(actor);
   await expireSentInvitations(ctx, actor.id);
   const body = await buildOnboardingBody(ctx, actor);
   return body;
 }
 
 export async function saveProfile(ctx: AppContext, actor: Actor, raw: unknown, idempotencyKeyValue: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   const input = parseInput(profileInputSchema, raw);
   return withIdempotency(ctx, actor.id, "onboarding.profile", idempotencyKeyValue, raw, async (tx) => {
     const now = ctx.now();
@@ -166,7 +176,7 @@ export async function saveProfile(ctx: AppContext, actor: Actor, raw: unknown, i
 }
 
 export async function saveFamily(ctx: AppContext, actor: Actor, raw: unknown, idempotencyKeyValue: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   const input = parseInput(familyInputSchema, raw);
   return withIdempotency(ctx, actor.id, "onboarding.family", idempotencyKeyValue, raw, async (tx) => {
     const state = await requireHouseholdState(tx, actor.id);
@@ -201,7 +211,7 @@ export async function saveFamily(ctx: AppContext, actor: Actor, raw: unknown, id
 }
 
 export async function saveCoverageStep(ctx: AppContext, actor: Actor, raw: unknown, idempotencyKeyValue: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   const input = parseInput(coverageSaveSchema, raw);
   const records = input.records ?? [];
   if (input.skip && records.length > 0) {
@@ -234,7 +244,7 @@ export async function saveCoverageStep(ctx: AppContext, actor: Actor, raw: unkno
 }
 
 export async function completeReview(ctx: AppContext, actor: Actor, raw: unknown, idempotencyKeyValue: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   return withIdempotency(ctx, actor.id, "onboarding.review", idempotencyKeyValue, raw ?? {}, async (tx) => {
     const state = await requireHouseholdState(tx, actor.id);
     if (!state.familyCompletedAt || !state.coverageCompletedAt) {
@@ -257,7 +267,7 @@ export async function completeReview(ctx: AppContext, actor: Actor, raw: unknown
 }
 
 export async function getHousehold(ctx: AppContext, actor: Actor) {
-  requireVerified(actor);
+  requireApproved(actor);
   await expireSentInvitations(ctx, actor.id);
   const memberships = await ctx.db
     .select()
@@ -272,7 +282,7 @@ export async function getHousehold(ctx: AppContext, actor: Actor) {
 }
 
 export async function getHouseholdById(ctx: AppContext, actor: Actor, householdId: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   if (!isUuid(householdId)) throw new HttpError(404, "not_found", "That household was not found.");
   const membership = await findMembership(ctx.db, actor.id, householdId);
   if (!membership) throw new HttpError(404, "not_found", "That household was not found.");
@@ -280,7 +290,7 @@ export async function getHouseholdById(ctx: AppContext, actor: Actor, householdI
 }
 
 export async function addHouseholdMember(ctx: AppContext, actor: Actor, raw: unknown, idempotencyKeyValue: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   const input = parseInput(memberAddSchema, raw);
   return withIdempotency(ctx, actor.id, "household.member.add", idempotencyKeyValue, raw, async (tx) => {
     const state = await requireHouseholdState(tx, actor.id);
@@ -323,7 +333,7 @@ export async function addHouseholdMember(ctx: AppContext, actor: Actor, raw: unk
 }
 
 export async function removeHouseholdMember(ctx: AppContext, actor: Actor, raw: unknown) {
-  requireVerified(actor);
+  requireApproved(actor);
   const input = parseInput(memberRemoveSchema, raw);
   const state = await requireHouseholdState(ctx.db, actor.id);
   await requireAdmin(ctx.db, actor.id, state.householdId!, ["owner"]);
@@ -351,7 +361,7 @@ export async function removeHouseholdMember(ctx: AppContext, actor: Actor, raw: 
 }
 
 export async function getPatient(ctx: AppContext, actor: Actor, patientId: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   if (!isUuid(patientId)) throw new HttpError(404, "not_found", "That record was not found.");
   const [found] = await ctx.db.select().from(patient).where(eq(patient.id, patientId)).limit(1);
   if (!found) throw new HttpError(404, "not_found", "That record was not found.");
@@ -401,7 +411,7 @@ export async function mutateProtectedRecords(ctx: AppContext, actor: Actor, pati
 }
 
 export async function revokeGrant(ctx: AppContext, actor: Actor, patientId: string, raw: unknown) {
-  requireVerified(actor);
+  requireApproved(actor);
   const input = parseInput(revokeSchema, raw);
   if (!isUuid(patientId)) throw new HttpError(404, "not_found", "That record was not found.");
   const [found] = await ctx.db.select().from(patient).where(eq(patient.id, patientId)).limit(1);
@@ -434,7 +444,7 @@ export async function revokeGrant(ctx: AppContext, actor: Actor, patientId: stri
 }
 
 export async function removePendingPatient(ctx: AppContext, actor: Actor, patientId: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   if (!isUuid(patientId)) throw new HttpError(404, "not_found", "That record was not found.");
   const [found] = await ctx.db.select().from(patient).where(eq(patient.id, patientId)).limit(1);
   if (!found) throw new HttpError(404, "not_found", "That record was not found.");
@@ -467,7 +477,7 @@ export async function removePendingPatient(ctx: AppContext, actor: Actor, patien
 }
 
 export async function sendInvitation(ctx: AppContext, actor: Actor, invitationId: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   if (!isUuid(invitationId)) throw new HttpError(404, "not_found", "That invitation was not found.");
   const [row] = await ctx.db.select().from(invitation).where(eq(invitation.id, invitationId)).limit(1);
   if (!row) throw new HttpError(404, "not_found", "That invitation was not found.");
@@ -531,7 +541,7 @@ export async function sendInvitation(ctx: AppContext, actor: Actor, invitationId
 }
 
 export async function cancelInvitation(ctx: AppContext, actor: Actor, invitationId: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   if (!isUuid(invitationId)) throw new HttpError(404, "not_found", "That invitation was not found.");
   const [row] = await ctx.db.select().from(invitation).where(eq(invitation.id, invitationId)).limit(1);
   if (!row) throw new HttpError(404, "not_found", "That invitation was not found.");
@@ -586,7 +596,7 @@ export async function previewInvitation(ctx: AppContext, actor: Actor | null, to
 }
 
 export async function acceptInvitation(ctx: AppContext, actor: Actor, token: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   const row = await requireOpenInvitation(ctx, token, actor);
   const now = ctx.now();
   await ctx.db.transaction(async (tx) => {
@@ -640,7 +650,7 @@ export async function acceptInvitation(ctx: AppContext, actor: Actor, token: str
 }
 
 export async function rejectInvitation(ctx: AppContext, actor: Actor, token: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   const row = await requireOpenInvitation(ctx, token, actor);
   const rejected = await ctx.db
     .update(invitation)
@@ -661,7 +671,7 @@ export async function rejectInvitation(ctx: AppContext, actor: Actor, token: str
 }
 
 export async function getSettings(ctx: AppContext, actor: Actor, request: Request) {
-  requireVerified(actor);
+  requireApproved(actor);
   const sessions = await ctx.auth.api.listSessions({ headers: request.headers });
   const current = await ctx.auth.api.getSession({ headers: request.headers });
   const providers = await ctx.db
@@ -708,7 +718,7 @@ export async function getSettings(ctx: AppContext, actor: Actor, request: Reques
 }
 
 export async function revokeSessionById(ctx: AppContext, actor: Actor, request: Request, sessionId: string) {
-  requireVerified(actor);
+  requireApproved(actor);
   const sessions = await ctx.auth.api.listSessions({ headers: request.headers });
   const match = (Array.isArray(sessions) ? sessions : []).find((item) => item.id === sessionId);
   if (!match) throw new HttpError(404, "not_found", "That session was not found.");
@@ -724,13 +734,13 @@ export async function revokeSessionById(ctx: AppContext, actor: Actor, request: 
 }
 
 export async function revokeOtherSessions(ctx: AppContext, actor: Actor, request: Request) {
-  requireVerified(actor);
+  requireApproved(actor);
   await ctx.auth.api.revokeOtherSessions({ headers: request.headers });
   return { ok: true };
 }
 
 export async function updatePreferences(ctx: AppContext, actor: Actor, raw: unknown) {
-  requireVerified(actor);
+  requireApproved(actor);
   const input = parseInput(preferenceSchema, raw);
   const now = ctx.now();
   await ctx.db
@@ -744,7 +754,7 @@ export async function updatePreferences(ctx: AppContext, actor: Actor, raw: unkn
 }
 
 export async function createPrivacyRequest(ctx: AppContext, actor: Actor, raw: unknown) {
-  requireVerified(actor);
+  requireApproved(actor);
   const input = parseInput(privacyRequestSchema, raw);
   const id = randomUUID();
   await ctx.db.insert(privacyRequest).values({
@@ -773,6 +783,65 @@ export async function createPrivacyRequest(ctx: AppContext, actor: Actor, raw: u
           : "Your export request is recorded. No export file has been created.",
     },
   };
+}
+
+export async function listAccessRequests(ctx: AppContext, actor: Actor) {
+  requireSiteAdmin(actor);
+  const rows = await ctx.db.select().from(user).orderBy(desc(user.createdAt));
+  const linked = await ctx.db.select({ userId: account.userId, providerId: account.providerId }).from(account);
+  const providers = new Map<string, string[]>();
+  for (const item of linked) {
+    const current = providers.get(item.userId) ?? [];
+    current.push(item.providerId);
+    providers.set(item.userId, current);
+  }
+  return {
+    ok: true,
+    users: rows.map((row) => ({
+      id: row.id,
+      email: row.email,
+      name: blankName(row.name),
+      emailVerified: row.emailVerified,
+      role: parseAccountRole(row.role),
+      accessStatus: parseAccessStatus(row.accessStatus),
+      providers: providers.get(row.id) ?? [],
+      createdAt: row.createdAt.toISOString(),
+      accessReviewedAt: row.accessReviewedAt ? row.accessReviewedAt.toISOString() : null,
+    })),
+  };
+}
+
+export async function decideAccess(ctx: AppContext, actor: Actor, userId: string, decision: AccessStatus) {
+  requireSiteAdmin(actor);
+  if (decision !== "approved" && decision !== "denied") {
+    throw new HttpError(400, "invalid_decision", "Choose approve or deny.");
+  }
+  if (userId === actor.id) {
+    throw new HttpError(409, "self_review", "You cannot change access on your own administrator account.");
+  }
+  const [target] = await ctx.db.select().from(user).where(eq(user.id, userId)).limit(1);
+  if (!target) throw new HttpError(404, "not_found", "That account was not found.");
+  if (parseAccountRole(target.role) === "admin") {
+    throw new HttpError(403, "admin_protected", "Administrator access cannot be changed here.");
+  }
+  const now = ctx.now();
+  await ctx.db
+    .update(user)
+    .set({
+      accessStatus: decision,
+      accessReviewedAt: now,
+      accessReviewedByUserId: actor.id,
+      updatedAt: now,
+    })
+    .where(eq(user.id, userId));
+  await writeAudit(ctx.db, now, {
+    actorUserId: actor.id,
+    householdId: null,
+    eventName: decision === "approved" ? "access_approved" : "access_denied",
+    entityType: "user",
+    entityId: userId,
+  });
+  return { ok: true, userId, accessStatus: decision };
 }
 
 export async function getDevOutbox(ctx: AppContext) {
@@ -1498,6 +1567,31 @@ function requireVerified(actor: Actor) {
   if (!actor.emailVerified) {
     throw new HttpError(403, "email_unverified", "Verify your email before continuing.");
   }
+}
+
+function requireApproved(actor: Actor) {
+  requireVerified(actor);
+  if (actor.accessStatus !== "approved") {
+    throw new HttpError(403, "access_pending", "This account is waiting for access approval.");
+  }
+}
+
+function requireSiteAdmin(actor: Actor) {
+  requireApproved(actor);
+  if (actor.role !== "admin") {
+    throw new HttpError(403, "admin_required", "Only an administrator can do that.");
+  }
+}
+
+function publicUser(actor: Actor) {
+  return {
+    id: actor.id,
+    email: actor.email,
+    emailVerified: actor.emailVerified,
+    displayName: blankName(actor.name),
+    role: actor.role,
+    accessStatus: actor.accessStatus,
+  };
 }
 
 function blankName(name: string): string | null {

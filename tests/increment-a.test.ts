@@ -338,7 +338,7 @@ describe("increment A", () => {
     expect((await api(ctx, `/api/patients/${patientId}/records`, { method: "POST", cookie: owner.cookie, body: {} })).status).toBe(403);
     const job = await authorizeQueuedRecordJob(
       ctx.db,
-      { id: me.data.user.id, email: me.data.user.email, name: "Avery Quinn", emailVerified: true },
+      { id: me.data.user.id, email: me.data.user.email, name: "Avery Quinn", emailVerified: true, role: "member", accessStatus: "approved" },
       patientId,
       getNow(),
     );

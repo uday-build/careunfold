@@ -43,7 +43,7 @@ export function SignUpForm({ config }: { config: PublicConfig }) {
   if (done) {
     return (
       <Notice tone="info" title="Check the next step for this email">
-        If this address can be registered, the next step is email verification. If you already have an account, sign in or reset your password. {deliveryCopy[config.emailDelivery]}
+        If this address can be registered, the next step is email verification. After that, access still waits for administrator approval. If you already have an account, sign in or reset your password. {deliveryCopy[config.emailDelivery]}
       </Notice>
     );
   }
@@ -120,7 +120,7 @@ export function GoogleButton({
   return (
     <div className="stack">
       <button
-        className="google"
+        className="secondary google"
         type="button"
         disabled={pending}
         onClick={async () => {
@@ -237,11 +237,11 @@ export function ResendVerificationForm({ config }: { config: PublicConfig }) {
   );
 }
 
-export function SignOutButton() {
+export function SignOutButton({ className = "secondary" }: { className?: string }) {
   const router = useRouter();
   return (
     <button
-      className="secondary"
+      className={className}
       type="button"
       onClick={async () => {
         await authClient.signOut();

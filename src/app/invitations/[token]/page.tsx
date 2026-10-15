@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Shell, Notice } from "@/components/shell";
+import { Shell } from "@/components/app-shell";
+import { Notice } from "@/components/shell";
 import { InvitationResponse } from "@/components/app-actions";
 import { currentActor } from "@/server/auth/current";
 import { getContext } from "@/server/context";

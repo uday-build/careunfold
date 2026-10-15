@@ -6,6 +6,8 @@ import {
   cancelInvitation,
   completeReview,
   createPrivacyRequest,
+  decideAccess,
+  listAccessRequests,
   getDevOutbox,
   getHousehold,
   getHouseholdById,
@@ -30,7 +32,7 @@ import {
   updatePreferences,
   type AppContext as Context,
 } from "../domain/service";
-import type { Actor } from "../domain/access";
+import { loadActor, type Actor } from "../domain/access";
 
 export async function dispatch(request: Request, ctx: Context): Promise<Response> {
   try {
@@ -131,6 +133,16 @@ async function route(request: Request, ctx: AppContext, path: string, actor: Act
     return json(200, await cancelInvitation(ctx, requireActor(actor), inviteCancel[1]));
   }
 
+  if (request.method === "GET" && path === "/api/admin/access-requests") {
+    return json(200, await listAccessRequests(ctx, requireActor(actor)));
+  }
+  const accessDecision = path.match(/^\/api\/admin\/users\/([^/]+)\/access$/);
+  if (request.method === "POST" && accessDecision) {
+    const body = await readJson(request);
+    const decision = body && typeof body === "object" && "decision" in body ? String((body as { decision: unknown }).decision) : "";
+    return json(200, await decideAccess(ctx, requireActor(actor), accessDecision[1], decision === "denied" ? "denied" : decision === "approved" ? "approved" : "pending"));
+  }
+
   if (request.method === "GET" && path === "/api/settings") {
     return json(200, await getSettings(ctx, requireActor(actor), request));
   }
@@ -154,12 +166,7 @@ async function route(request: Request, ctx: AppContext, path: string, actor: Act
 async function actorFrom(request: Request, ctx: AppContext): Promise<Actor | null> {
   const session = await ctx.auth.api.getSession({ headers: request.headers });
   if (!session) return null;
-  return {
-    id: session.user.id,
-    email: session.user.email,
-    name: session.user.name,
-    emailVerified: Boolean(session.user.emailVerified),
-  };
+  return loadActor(ctx.db, ctx.env, session.user, ctx.now());
 }
 
 function requireActor(actor: Actor | null): Actor {

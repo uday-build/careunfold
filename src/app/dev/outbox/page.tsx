@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { Shell, Notice } from "@/components/shell";
+import { Shell } from "@/components/app-shell";
+import { Notice } from "@/components/shell";
 import { getContext } from "@/server/context";
 import { getDevOutbox } from "@/server/domain/service";
 import { HttpError } from "@/server/http/errors";

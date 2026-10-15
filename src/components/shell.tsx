@@ -1,31 +1,3 @@
-import Link from "next/link";
-
-export function Shell({
-  children,
-  nav,
-}: {
-  children: React.ReactNode;
-  nav?: Array<{ href: string; label: string; current?: boolean }>;
-}) {
-  return (
-    <div className="shell">
-      <header className="topbar">
-        <Link className="brand" href="/">CareUnfold</Link>
-        {nav ? (
-          <nav className="nav" aria-label="Account">
-            {nav.map((item) => (
-              <Link key={item.href} href={item.href} aria-current={item.current ? "page" : undefined}>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        ) : null}
-      </header>
-      <main id="main">{children}</main>
-    </div>
-  );
-}
-
 export function Notice({ tone, title, children }: { tone: "active" | "pending" | "closed" | "info"; title: string; children: React.ReactNode }) {
   return (
     <div className="notice" role="status">

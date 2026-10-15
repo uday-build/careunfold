@@ -15,6 +15,7 @@ export type AppEnv = {
   verificationExpiresIn: number;
   resetExpiresIn: number;
   invitationExpiresInMs: number;
+  adminEmail: string | null;
 };
 
 const DEV_SECRET_MIN = 32;
@@ -60,6 +61,7 @@ export function readEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     verificationExpiresIn: numberFrom(source.AUTH_VERIFICATION_EXPIRES_IN, 60 * 60),
     resetExpiresIn: numberFrom(source.AUTH_RESET_EXPIRES_IN, 60 * 60),
     invitationExpiresInMs: numberFrom(source.INVITATION_EXPIRES_IN_HOURS, 24 * 7) * 60 * 60 * 1000,
+    adminEmail: blankToNull(source.ADMIN_EMAIL)?.toLowerCase() ?? null,
   };
 }
 

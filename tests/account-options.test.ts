@@ -4,7 +4,7 @@ import { createAuth, type Auth } from "@/server/auth/create-auth";
 import { account, session, user } from "@/server/db/schema";
 import { readMemoryMailbox } from "@/server/email/delivery";
 import type { AppContext } from "@/server/domain/service";
-import { api, authRequest, cookiesFrom, createTestContext, jsonRequest, origin, password, register, resetData, signIn } from "./support";
+import { api, approveAccess, authRequest, cookiesFrom, createTestContext, jsonRequest, origin, password, register, resetData, signIn } from "./support";
 
 const googleTokenEndpoint = "https://oauth2.googleapis.com/token";
 
@@ -123,15 +123,20 @@ describe("account options", () => {
     expect(accounts[0]?.accessToken).not.toBe("google-access");
     expect(readMemoryMailbox()).toHaveLength(0);
 
+    const waiting = await api(ctx, "/api/me", { cookie: result.cookie });
+    expect(waiting.status).toBe(200);
+    expect(waiting.data.home).toBe("/pending-access");
+    expect(waiting.data.user.displayName).toBe("Riley Google");
+    expect(waiting.data.user.accessStatus).toBe("pending");
+    await approveAccess(ctx, "new.google@example.com");
     const me = await api(ctx, "/api/me", { cookie: result.cookie });
-    expect(me.status).toBe(200);
     expect(me.data.home).toBe("/onboarding/profile");
-    expect(me.data.user.displayName).toBe("Riley Google");
   });
 
   it("signs a returning Google user into the same account", async () => {
     const profile = { sub: "google-sub-2", email: "returning@example.com", email_verified: true, name: "Sam Return" };
     const first = await completeGoogle("/sign-up", profile);
+    await approveAccess(ctx, "returning@example.com");
     const saved = await api(ctx, "/api/onboarding/profile", {
       method: "POST",
       cookie: first.cookie,

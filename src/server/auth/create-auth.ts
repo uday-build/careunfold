@@ -1,9 +1,11 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { eq } from "drizzle-orm";
 import type { AppDatabase } from "../db/client";
-import { authSchema } from "../db/schema";
+import { authSchema, user } from "../db/schema";
 import type { EmailSender } from "../email/delivery";
 import type { AppEnv } from "../env";
+import { adminEmailsFrom, isAdminEmail } from "../domain/access";
 
 export type CreateAuthInput = {
   db: AppDatabase;
@@ -38,6 +40,44 @@ export function createAuth(input: CreateAuthInput) {
         const text = redact(String(message));
         const extra = args.map((item) => redact(safeString(item)));
         console[level === "error" ? "error" : "warn"](text, ...extra);
+      },
+    },
+    user: {
+      additionalFields: {
+        role: { type: "string", required: false, defaultValue: "member", input: false },
+        accessStatus: { type: "string", required: false, defaultValue: "pending", input: false },
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (created) => {
+            const admin = isAdminEmail(input.env, created.email);
+            await input.db
+              .update(user)
+              .set({
+                role: admin ? "admin" : "member",
+                accessStatus: admin ? "approved" : "pending",
+                accessReviewedAt: admin ? created.createdAt : null,
+                accessReviewedByUserId: admin ? created.id : null,
+                updatedAt: created.updatedAt,
+              })
+              .where(eq(user.id, created.id));
+            if (admin) return;
+            const notify = adminEmailsFrom(input.env)[0];
+            if (!notify) return;
+            try {
+              await input.email.send({
+                to: notify,
+                purpose: "access_request",
+                subject: "CareUnfold access request",
+                text: `A CareUnfold account was created and is waiting for approval.\n\n${created.email}\n\nOpen /app/admin to approve or deny access.`,
+              });
+            } catch {
+              // Sign-up still succeeds if the notice cannot be stored.
+            }
+          },
+        },
       },
     },
     session: {

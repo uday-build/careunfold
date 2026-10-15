@@ -31,7 +31,7 @@ export default async function DashboardPage() {
           <li className="card split" key={person.id}>
             <div>
               <strong>{person.givenName} {person.familyName}</strong>
-              <div className="muted">{person.status.label}</div>
+              <div className="status">{person.status.label}</div>
             </div>
             <Link href={`/app/family/${person.id}`}>Open profile</Link>
           </li>

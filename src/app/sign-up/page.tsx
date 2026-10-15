@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Notice, Shell } from "@/components/shell";
+import { Shell } from "@/components/app-shell";
+import { Notice } from "@/components/shell";
 import { GoogleButton, SignUpForm } from "@/components/auth-forms";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { loadPublicConfig } from "../load";
@@ -14,7 +15,7 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
     <Shell>
       <section className="hero stack">
         <h1>Create your account</h1>
-        <p className="lede">Choose one way to sign in. You can link the other later from Settings.</p>
+        <p className="lede">Choose Google or email. Registration is stored. The workspace stays closed until an administrator approves access.</p>
         {error ? <Notice tone="closed" title="Google sign-up did not finish">{error}</Notice> : null}
         <section className="option stack" aria-labelledby="google-option">
           <h2 id="google-option">Use your Google account</h2>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Shell } from "@/components/shell";
+import { Shell } from "@/components/app-shell";
 import { ForgotPasswordForm } from "@/components/auth-forms";
 import { loadPublicConfig } from "../load";
 

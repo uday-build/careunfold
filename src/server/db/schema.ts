@@ -18,6 +18,10 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull(),
   image: text("image"),
+  role: text("role").notNull().default("member"),
+  accessStatus: text("access_status").notNull().default("pending"),
+  accessReviewedAt: timestamp("access_reviewed_at"),
+  accessReviewedByUserId: text("access_reviewed_by_user_id"),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
 });

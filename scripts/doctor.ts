@@ -21,11 +21,15 @@ async function main() {
         googleSignIn: env.googleEnabled,
         emailDelivery: env.emailDelivery,
         googleRedirectPath: "/api/auth/callback/google",
+        adminConfigured: Boolean(env.adminEmail),
       },
       null,
       2,
     ),
   );
+  if (!env.adminEmail) {
+    console.log("ADMIN_EMAIL is not set. New accounts will wait for approval, and no administrator can approve them until that address is set.");
+  }
   if (!env.googleEnabled) {
     console.log("Google sign-in is not configured. The sign-in page will not start a Google session.");
   }

@@ -1,6 +1,7 @@
 import path from "node:path";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { createAuth } from "@/server/auth/create-auth";
+import { user } from "@/server/db/schema";
 import { applyMigrations } from "@/server/db/client";
 import { clearMemoryMailbox, createEmailSender, readMemoryMailbox } from "@/server/email/delivery";
 import { readEnv, type AppEnv } from "@/server/env";
@@ -121,7 +122,27 @@ export async function register(ctx: AppContext, email: string) {
   });
   const signUpBody = await signUp.json();
   const verify = await ctx.auth.handler(new Request(linkFromMailbox("verify_email")));
+  await approveAccess(ctx, email);
   return { signUp, signUpBody, cookie: cookiesFrom(verify), email };
+}
+
+export async function registerPending(ctx: AppContext, email: string) {
+  clearMemoryMailbox();
+  const signUp = await authRequest(ctx, "/sign-up/email", {
+    body: { name: "", email, password, callbackURL: "/verify-email" },
+  });
+  const signUpBody = await signUp.json();
+  const verify = await ctx.auth.handler(new Request(linkFromMailbox("verify_email")));
+  return { signUp, signUpBody, cookie: cookiesFrom(verify), email };
+}
+
+export async function approveAccess(ctx: AppContext, email: string, status: "approved" | "denied" = "approved") {
+  const [row] = await ctx.db.select().from(user).where(eq(user.email, email)).limit(1);
+  if (!row) throw new Error(`No account stored for ${email}`);
+  await ctx.db
+    .update(user)
+    .set({ accessStatus: status, accessReviewedAt: ctx.now(), updatedAt: ctx.now() })
+    .where(eq(user.id, row.id));
 }
 
 export async function signIn(ctx: AppContext, email: string, nextPassword = password) {

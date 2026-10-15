@@ -1,4 +1,5 @@
-import { Shell, Notice } from "@/components/shell";
+import { Shell } from "@/components/app-shell";
+import { Notice } from "@/components/shell";
 import { ResetPasswordForm } from "@/components/auth-forms";
 
 export const dynamic = "force-dynamic";

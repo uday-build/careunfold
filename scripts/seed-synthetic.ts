@@ -44,7 +44,8 @@ async function main() {
       console.error("A partial synthetic fixture exists. Remove the local database, or delete these fixture accounts, before seeding again.");
       process.exit(1);
     }
-    const actor = { id: owner.id, email: owner.email, name: "Fixture Owner", emailVerified: true };
+    await ctx.db.update(user).set({ accessStatus: "approved", role: "member", updatedAt: new Date() }).where(eq(user.id, owner.id));
+    const actor = { id: owner.id, email: owner.email, name: "Fixture Owner", emailVerified: true, role: "member" as const, accessStatus: "approved" as const };
     const profile = await saveProfile(ctx, actor, { displayName: "Fixture Owner", organizingFor: "both" }, randomUUID());
     const householdId = (profile.body as { onboarding?: { householdId?: string | null } }).onboarding?.householdId;
     if (!householdId) throw new Error("Fixture household was not saved.");

@@ -115,14 +115,21 @@ npm run db:seed:synthetic
 
 This creates `fixture.owner@example.test` and `fixture.adult@example.test`, marks the household as a synthetic fixture, and leaves the adult invitation unsent. Sign in yourself. The command does not create a session. It refuses to run when `NODE_ENV=production`.
 
+## Access approval
+
+Set `ADMIN_EMAIL` in `.env.local` to the Google or email address that should run Admin. That account is approved automatically. Every other account is stored as pending after Google sign-in or email verification.
+
+Open `/app/admin` to approve or deny access. Pending accounts can sign in, but they cannot open onboarding or the workspace until you approve them.
+
 ## What a new account does
 
 1. Create an account. The response does not say whether the email was already registered.
 2. Open the verification message and use the link. Sign-in stays closed until then.
-3. Save your name and who the account is for.
-4. Add people. An adult invitation stays a draft until you press Send invitation.
-5. Skip or save coverage. Member IDs are masked in lists.
-6. Confirm. You can leave and return; the next incomplete step opens again.
+3. Wait for administrator approval. The workspace stays closed until then.
+4. Save your name and who the account is for.
+5. Add people. An adult invitation stays a draft until you press Send invitation.
+6. Skip or save coverage. Member IDs are masked in lists.
+7. Confirm. You can leave and return; the next incomplete step opens again.
 
 Household membership lets someone administer the household. It does not grant access to a person's protected records. Representative authority for a minor or dependent adult stays pending. This version has no approval action for that review.
 

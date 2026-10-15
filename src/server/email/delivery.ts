@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import type { AppDatabase } from "../db/client";
 import { devEmailOutbox } from "../db/schema";
 
-export type EmailPurpose = "verify_email" | "reset_password" | "existing_account" | "invitation";
+export type EmailPurpose = "verify_email" | "reset_password" | "existing_account" | "invitation" | "access_request";
 
 export type OutboundEmail = {
   to: string;

@@ -1,15 +1,79 @@
 import { and, eq } from "drizzle-orm";
 import type { AppDatabase } from "../db/client";
-import { accessGrant, householdMembership, jurisdictionPolicy, patient } from "../db/schema";
+import { accessGrant, householdMembership, jurisdictionPolicy, patient, user } from "../db/schema";
+import type { AppEnv } from "../env";
 import type { Scope } from "./validation";
 import { isUuid } from "./validation";
+
+export type AccessStatus = "pending" | "approved" | "denied";
+export type AccountRole = "admin" | "member";
 
 export type Actor = {
   id: string;
   email: string;
   name: string;
   emailVerified: boolean;
+  role: AccountRole;
+  accessStatus: AccessStatus;
 };
+
+export function parseAccessStatus(value: string | null | undefined): AccessStatus {
+  if (value === "approved" || value === "denied") return value;
+  return "pending";
+}
+
+export function parseAccountRole(value: string | null | undefined): AccountRole {
+  return value === "admin" ? "admin" : "member";
+}
+
+export function adminEmailsFrom(env: Pick<AppEnv, "adminEmail">): string[] {
+  if (!env.adminEmail) return [];
+  return env.adminEmail
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function isAdminEmail(env: Pick<AppEnv, "adminEmail">, email: string): boolean {
+  return adminEmailsFrom(env).includes(email.trim().toLowerCase());
+}
+
+export async function syncConfiguredAdmin(
+  db: AppDatabase,
+  env: Pick<AppEnv, "adminEmail">,
+  sessionUser: { id: string; email: string },
+  now: Date,
+): Promise<void> {
+  if (!isAdminEmail(env, sessionUser.email)) return;
+  await db
+    .update(user)
+    .set({
+      role: "admin",
+      accessStatus: "approved",
+      accessReviewedAt: now,
+      accessReviewedByUserId: sessionUser.id,
+      updatedAt: now,
+    })
+    .where(eq(user.id, sessionUser.id));
+}
+
+export async function loadActor(
+  db: AppDatabase,
+  env: Pick<AppEnv, "adminEmail">,
+  sessionUser: { id: string; email: string; name: string; emailVerified: boolean },
+  now: Date,
+): Promise<Actor> {
+  await syncConfiguredAdmin(db, env, sessionUser, now);
+  const [row] = await db.select().from(user).where(eq(user.id, sessionUser.id)).limit(1);
+  return {
+    id: sessionUser.id,
+    email: sessionUser.email,
+    name: sessionUser.name,
+    emailVerified: Boolean(sessionUser.emailVerified),
+    role: parseAccountRole(row?.role),
+    accessStatus: parseAccessStatus(row?.accessStatus),
+  };
+}
 
 export type AccessDenial = {
   allowed: false;
@@ -40,6 +104,14 @@ export async function decidePatientAccess(
       status: 403,
       code: "email_unverified",
       message: "Verify your email before opening protected records.",
+    };
+  }
+  if (actor.accessStatus !== "approved") {
+    return {
+      allowed: false,
+      status: 403,
+      code: "access_pending",
+      message: "This account is waiting for access approval.",
     };
   }
   if (!isUuid(patientId)) return notFound;

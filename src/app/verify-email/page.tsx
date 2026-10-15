@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Shell, Notice } from "@/components/shell";
+import { Shell } from "@/components/app-shell";
+import { Notice } from "@/components/shell";
 import { ResendVerificationForm } from "@/components/auth-forms";
 import { currentActor } from "@/server/auth/current";
 import { loadPublicConfig } from "../load";
