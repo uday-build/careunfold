@@ -523,7 +523,6 @@ code {
 .m-stats,
 .m-how,
 .m-compare,
-.m-work,
 .m-footer {
   width: min(72rem, calc(100% - 2rem));
   margin-left: auto;
@@ -677,7 +676,6 @@ code {
 
 .m-evidence-copy h2,
 .m-how h2,
-.m-work h2,
 .m-compare-card h2,
 .m-band h2 {
   font-family: var(--font-display);
@@ -690,8 +688,7 @@ code {
 }
 
 .m-evidence-copy p,
-.m-lead,
-.m-work p {
+.m-lead {
   color: var(--color-secondary);
   max-width: 42rem;
   font-size: 0.9375rem;
@@ -782,8 +779,7 @@ code {
 
 .m-stats p:last-child { color: var(--color-secondary); font-size: 0.9375rem; }
 
-.m-how,
-.m-work { padding: 64px 0 24px; }
+.m-how { padding: 64px 0 24px; }
 
 .m-stages {
   list-style: none;

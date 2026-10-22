@@ -144,14 +144,6 @@ export default async function HomePage() {
           </article>
         </section>
 
-        <section className="m-work">
-          <p className="m-kicker">Product work</p>
-          <h2>Designed as distinct stages, with explicit limits</h2>
-          <p>
-            My work spans problem definition, product requirements, conversational UX, agent responsibilities and evaluation design. I’ve designed distinct extraction, explanation, reconciliation, decision, output and email-drafting stages, with explicit boundaries for missing evidence, uncertain payments and unauthorized records.
-          </p>
-        </section>
-
         <section className="m-band">
           <h2>Ready to make medical billing easier to navigate?</h2>
           <p>Access is reviewed before anyone can continue.</p>
