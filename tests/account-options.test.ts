@@ -130,7 +130,7 @@ describe("account options", () => {
     expect(waiting.data.user.accessStatus).toBe("pending");
     await approveAccess(ctx, "new.google@example.com");
     const me = await api(ctx, "/api/me", { cookie: result.cookie });
-    expect(me.data.home).toBe("/onboarding/profile");
+    expect(me.data.home).toBe("/onboarding");
   });
 
   it("signs a returning Google user into the same account", async () => {
@@ -224,7 +224,7 @@ describe("account options", () => {
     const login = await signIn(ctx, "email.user2@example.com");
     expect(login.response.status).toBe(200);
     const me = await api(ctx, "/api/me", { cookie: login.cookie });
-    expect(me.data.home).toBe("/onboarding/profile");
+    expect(me.data.home).toBe("/onboarding");
   });
 });
 

@@ -9,9 +9,9 @@ export default async function CoverageStepPage() {
   return (
     <Shell>
       <section className="stack">
-        <p className="eyebrow">Step 3 of 4</p>
-        <h1>Coverage you already know</h1>
-        <p className="lede">This is optional. You type the details. Nothing is read from a card or a document.</p>
+        <p className="eyebrow">Step 3 of 4 · Coverage</p>
+        <h1>Insurance coverage</h1>
+        <p className="lede">Optional. Type the insurer, subscriber and member identifiers, coverage dates, and the plan benefits you already know. Nothing is read from a card.</p>
         <CoverageForm onboarding={onboarding} />
       </section>
     </Shell>

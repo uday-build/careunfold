@@ -465,6 +465,47 @@ button:disabled,
   gap: 12px;
 }
 
+.graph-node-primary {
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.graph-edges {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 12px;
+}
+
+.graph-edges li {
+  border: var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.permission-list {
+  display: grid;
+  gap: 10px;
+}
+
+.permission-list label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-weight: 400;
+}
+
+.permission-list input[type="checkbox"] {
+  width: auto;
+  min-height: 0;
+  margin-top: 3px;
+}
+
 pre {
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -521,6 +562,8 @@ code {
 .m-nav,
 .m-hero,
 .m-stats,
+.m-included,
+.m-pricing,
 .m-how,
 .m-compare,
 .m-footer {
@@ -675,6 +718,8 @@ code {
 }
 
 .m-evidence-copy h2,
+.m-included-card h2,
+.m-pricing h2,
 .m-how h2,
 .m-compare-card h2,
 .m-band h2 {
@@ -779,7 +824,178 @@ code {
 
 .m-stats p:last-child { color: var(--color-secondary); font-size: 0.9375rem; }
 
+.m-included { padding: 64px 0 8px; }
+
+.m-included-card {
+  background: var(--color-surface);
+  border: var(--border-card);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-lg);
+  padding: 48px 32px;
+  max-width: 40rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.m-included-card p {
+  color: var(--color-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.m-included-points {
+  list-style: none;
+  margin: 28px 0 24px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+  text-align: left;
+}
+
+.m-included-points li,
+.m-plan li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--color-primary);
+  font-size: 0.9375rem;
+}
+
+.m-check {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  flex: 0 0 auto;
+  margin-top: 7px;
+}
+
+.m-pricing { padding: 64px 0 24px; }
+
+.m-plans {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 32px;
+  align-items: stretch;
+}
+
+.m-plan {
+  background: var(--color-surface);
+  border: var(--border-card);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.m-plan h3,
+.m-how-copy h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.m-plan-price {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+
+.m-plan-price .m-muted {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.m-plan-detail,
+.m-how-copy p {
+  color: var(--color-secondary);
+  font-size: 0.9375rem;
+}
+
+.m-plan ul {
+  list-style: none;
+  margin: 4px 0 8px;
+  padding: 12px 0 0;
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.m-plan .m-btn { justify-self: start; }
+
+.m-plan-featured {
+  background: var(--color-primary);
+  color: var(--color-surface);
+  border-color: transparent;
+}
+
+.m-plan-featured .m-kicker,
+.m-plan-featured .m-muted,
+.m-plan-featured .m-plan-detail { color: var(--color-neutral-400); }
+
+.m-plan-featured h3,
+.m-plan-featured .m-plan-price { color: var(--color-surface); }
+
+.m-plan-featured li { color: var(--color-surface); }
+
 .m-how { padding: 64px 0 24px; }
+
+.m-how-steps {
+  list-style: none;
+  margin: 32px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.m-how-step {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 32px;
+  align-items: center;
+  background: var(--color-surface);
+  border: var(--border-card);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+}
+
+.m-how-step-reverse { grid-template-columns: 1.05fr 0.95fr; }
+
+.m-how-step-reverse .m-how-copy { order: 2; }
+
+.m-how-copy {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.m-how-step .m-product-card {
+  background: var(--color-neutral);
+  box-shadow: none;
+}
+
+.m-included,
+.m-pricing,
+.m-how {
+  scroll-margin-top: 24px;
+}
+
+.m-stages-kicker { margin: 48px 0 0; }
 
 .m-stages {
   list-style: none;
@@ -902,12 +1118,22 @@ code {
   .m-hero-panel,
   .m-evidence,
   .m-stats,
+  .m-included-points,
+  .m-plans,
+  .m-how-step,
+  .m-how-step-reverse,
   .m-stages,
   .m-compare,
   .m-nav {
     display: grid;
     grid-template-columns: 1fr;
   }
+
+  .m-how-step-reverse .m-how-copy { order: 0; }
+
+  .m-included-card,
+  .m-how-step,
+  .m-plan { padding: 24px; }
 
   .m-nav-actions { justify-content: flex-start; flex-wrap: wrap; }
 

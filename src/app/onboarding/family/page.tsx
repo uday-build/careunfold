@@ -9,9 +9,9 @@ export default async function FamilyStepPage() {
   return (
     <Shell>
       <section className="stack">
-        <p className="eyebrow">Step 2 of 4</p>
-        <h1>People in this household</h1>
-        <p className="lede">Saving a person does not send an invitation. Adult access stays pending until they accept. Representative authority stays pending until a policy authorizes it.</p>
+        <p className="eyebrow">Step 2 of 4 · Family</p>
+        <h1>People, relationships, and permissions</h1>
+        <p className="lede">Record each person, their birth date, how they relate to the primary account holder, and what a caregiver may see. Saving does not send an invitation.</p>
         <FamilyForm onboarding={onboarding} />
       </section>
     </Shell>

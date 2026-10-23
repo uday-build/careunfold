@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Shell } from "@/components/app-shell";
 import { Notice } from "@/components/shell";
@@ -22,10 +23,11 @@ export default async function PendingAccessPage() {
           </Notice>
         ) : (
           <Notice tone="pending" title="Your account is stored and waiting">
-            You can register with Google or with email and password. Opening CareUnfold stays closed until an administrator approves access. Nothing in the workspace is available yet.
+            You can register with Google or with email and password. Opening CareUnfold stays closed until an administrator approves access. After approval, the next step is family setup.
           </Notice>
         )}
         <p className="muted">Signed in as {actor.email}.</p>
+        <p><Link href="/auth/continue">Continue if access was just approved</Link></p>
       </section>
     </Shell>
   );

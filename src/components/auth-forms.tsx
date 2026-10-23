@@ -82,7 +82,7 @@ export function SignInForm({ config, next, initialError }: { config: PublicConfi
       return;
     }
     const me = await api<{ home: string }>("/api/me");
-    router.push(me.ok ? me.data.home : "/onboarding/profile");
+    router.push(me.ok ? me.data.home : "/onboarding");
     router.refresh();
   }
 

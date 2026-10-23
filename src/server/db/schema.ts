@@ -226,6 +226,7 @@ export const authorityReview = pgTable("authority_review", {
     .references(() => user.id, { onDelete: "restrict" }),
   relationshipLabel: text("relationship_label").notNull(),
   claimedAuthority: text("claimed_authority").notNull(),
+  requestedScopes: text("requested_scopes").array().notNull().default(["profile.read", "coverage.read", "records.read"]),
   status: text("status").notNull(),
   policyReference: text("policy_reference"),
   decidedByUserId: text("decided_by_user_id").references(() => user.id, { onDelete: "set null" }),
@@ -253,6 +254,7 @@ export const coverage = pgTable(
     coverageEnd: date("coverage_end", { mode: "string" }),
     startDateState: text("start_date_state").notNull(),
     endDateState: text("end_date_state").notNull(),
+    benefits: jsonb("benefits"),
     version: integer("version").notNull().default(1),
     createdByUserId: text("created_by_user_id")
       .notNull()

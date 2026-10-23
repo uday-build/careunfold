@@ -9,9 +9,9 @@ export default async function ProfilePage() {
   return (
     <Shell>
       <section className="stack">
-        <p className="eyebrow">Step 1 of 4</p>
-        <h1>Your account</h1>
-        <p className="lede">Your name is saved on the server. Choosing “someone else” does not create a patient profile for you.</p>
+        <p className="eyebrow">Step 1 of 4 · Primary account holder</p>
+        <h1>Who is this account for?</h1>
+        <p className="lede">The primary account holder administers the household. A patient profile is created for you only if you include yourself.</p>
         <ProfileForm onboarding={onboarding} />
       </section>
     </Shell>

@@ -15,6 +15,13 @@
       "when": 1760544000000,
       "tag": "0001_access_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1761163200000,
+      "tag": "0002_coverage_benefits",
+      "breakpoints": true
     }
   ]
 }

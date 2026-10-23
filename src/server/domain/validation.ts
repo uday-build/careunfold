@@ -15,6 +15,15 @@ export type Scope = (typeof SCOPES)[number];
 export const SELF_SCOPES: Scope[] = [...SCOPES];
 export const DEFAULT_SHARED_SCOPES: Scope[] = ["profile.read", "coverage.read", "records.read"];
 
+export const CAREGIVER_PERMISSIONS: Array<{ scope: Scope; label: string; detail: string }> = [
+  { scope: "profile.read", label: "View profile", detail: "Name, birth date, and relationship." },
+  { scope: "profile.write", label: "Edit profile", detail: "Change saved family details." },
+  { scope: "coverage.read", label: "View coverage", detail: "Plan identifiers and stated benefits." },
+  { scope: "coverage.write", label: "Edit coverage", detail: "Change typed coverage records." },
+  { scope: "records.read", label: "View records", detail: "Bills and explanations, when that work exists." },
+  { scope: "records.write", label: "Add or correct records", detail: "Upload or correct documents, when that work exists." },
+];
+
 export const scopeSchema = z.enum(SCOPES);
 
 const requiredName = z.string().trim().min(1, "Enter a name.").max(80, "Use 80 characters or fewer.");
@@ -62,6 +71,41 @@ const dateFieldSchema = z.discriminatedUnion("state", [
   z.object({ state: z.literal("known"), value: z.string().trim() }),
 ]);
 
+const moneyBenefitSchema = z.discriminatedUnion("state", [
+  z.object({ state: z.literal("unknown") }),
+  z.object({
+    state: z.literal("known"),
+    amountUsd: z
+      .string()
+      .trim()
+      .regex(/^\d+(\.\d{1,2})?$/, "Enter a dollar amount, such as 1500 or 40.00."),
+  }),
+]);
+
+const percentBenefitSchema = z.discriminatedUnion("state", [
+  z.object({ state: z.literal("unknown") }),
+  z.object({
+    state: z.literal("known"),
+    percent: z.coerce.number().min(0, "Use 0 to 100.").max(100, "Use 0 to 100."),
+  }),
+]);
+
+export const planBenefitsSchema = z.object({
+  deductible: moneyBenefitSchema,
+  officeVisitCopay: moneyBenefitSchema,
+  coinsurance: percentBenefitSchema,
+  outOfPocketMax: moneyBenefitSchema,
+});
+
+export type PlanBenefits = z.infer<typeof planBenefitsSchema>;
+
+export const UNKNOWN_PLAN_BENEFITS: PlanBenefits = {
+  deductible: { state: "unknown" },
+  officeVisitCopay: { state: "unknown" },
+  coinsurance: { state: "unknown" },
+  outOfPocketMax: { state: "unknown" },
+};
+
 export const coverageInputSchema = z.object({
   clientKey: z.string().trim().min(8).max(80),
   insurer: optionalText,
@@ -73,6 +117,7 @@ export const coverageInputSchema = z.object({
   start: dateFieldSchema,
   end: dateFieldSchema,
   coveredPatientIds: z.array(z.string().trim()).max(12),
+  benefits: planBenefitsSchema.optional(),
 });
 
 export const coverageSaveSchema = z.object({

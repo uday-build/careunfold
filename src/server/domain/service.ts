@@ -38,6 +38,7 @@ import {
   DEFAULT_SHARED_SCOPES,
   SELF_SCOPES,
   assertRealDate,
+  UNKNOWN_PLAN_BENEFITS,
   coverageSaveSchema,
   familyInputSchema,
   isUuid,
@@ -48,6 +49,7 @@ import {
   privacyRequestSchema,
   profileInputSchema,
   revokeSchema,
+  type PlanBenefits,
   type Scope,
 } from "./validation";
 
@@ -70,6 +72,7 @@ export function homeFor(
   if (!actor.emailVerified) return "/verify-email";
   if (actor.accessStatus !== "approved") return "/pending-access";
   if (step === "complete") return "/app";
+  if (step === "profile") return "/onboarding";
   return `/onboarding/${step}`;
 }
 
@@ -180,7 +183,10 @@ export async function saveFamily(ctx: AppContext, actor: Actor, raw: unknown, id
   const input = parseInput(familyInputSchema, raw);
   return withIdempotency(ctx, actor.id, "onboarding.family", idempotencyKeyValue, raw, async (tx) => {
     const state = await requireHouseholdState(tx, actor.id);
-    const organizingFor = state.organizingFor as OrganizingFor;
+    let organizingFor = state.organizingFor as OrganizingFor;
+    if (organizingFor === "self" && input.patients.some((person) => person.authorityCategory !== "self")) {
+      organizingFor = "both";
+    }
     const now = ctx.now();
     const keys = new Set<string>();
     for (const [index, person] of input.patients.entries()) {
@@ -197,7 +203,12 @@ export async function saveFamily(ctx: AppContext, actor: Actor, raw: unknown, id
     assertFamilyComplete(organizingFor, people);
     await tx
       .update(onboardingState)
-      .set({ familyCompletedAt: state.familyCompletedAt ?? now, version: state.version + 1, updatedAt: now })
+      .set({
+        organizingFor,
+        familyCompletedAt: state.familyCompletedAt ?? now,
+        version: state.version + 1,
+        updatedAt: now,
+      })
       .where(eq(onboardingState.userId, actor.id));
     await writeAudit(tx, now, {
       actorUserId: actor.id,
@@ -841,6 +852,15 @@ export async function decideAccess(ctx: AppContext, actor: Actor, userId: string
     entityType: "user",
     entityId: userId,
   });
+  await ctx.email.send({
+    to: target.email,
+    purpose: decision === "approved" ? "access_approved" : "access_denied",
+    subject: decision === "approved" ? "CareUnfold access was approved" : "CareUnfold access was not approved",
+    text:
+      decision === "approved"
+        ? `Your CareUnfold account can continue. The next step is to set up your family: the primary account holder, people you are organizing care for, relationships, caregiver permissions, and any coverage you already know.\n\n${ctx.env.authUrl}/onboarding\n`
+        : `An administrator did not approve this CareUnfold account. The workspace stays closed.\n`,
+  });
   return { ok: true, userId, accessStatus: decision };
 }
 
@@ -964,6 +984,7 @@ async function upsertPerson(
     }
   }
   if (person.authorityCategory === "minor_representative" || person.authorityCategory === "dependent_adult_representative") {
+    const scopes = person.requestedScopes?.length ? person.requestedScopes : DEFAULT_SHARED_SCOPES;
     const [review] = await tx.select().from(authorityReview).where(eq(authorityReview.patientId, saved.id)).limit(1);
     if (!review) {
       await tx.insert(authorityReview).values({
@@ -972,12 +993,18 @@ async function upsertPerson(
         claimedByUserId: actor.id,
         relationshipLabel: person.relationship,
         claimedAuthority: person.authorityCategory,
+        requestedScopes: scopes,
         status: "pending_review",
         policyReference: null,
         version: 1,
         createdAt: now,
         updatedAt: now,
       });
+    } else if (review.status === "pending_review") {
+      await tx
+        .update(authorityReview)
+        .set({ relationshipLabel: person.relationship, requestedScopes: scopes, updatedAt: now, version: review.version + 1 })
+        .where(eq(authorityReview.id, review.id));
     }
     const policy = await loadJurisdictionPolicy(tx);
     const assessment = assessAgeTransition(saved.birthDate, policy, now);
@@ -1074,6 +1101,7 @@ async function upsertCoverage(
       });
     }
   }
+  const benefits = normalizePlanBenefits(record.benefits);
   const [saved] = await tx
     .insert(coverage)
     .values({
@@ -1090,6 +1118,7 @@ async function upsertCoverage(
       coverageEnd: end.value,
       startDateState: start.state,
       endDateState: end.state,
+      benefits,
       version: 1,
       createdByUserId: actor.id,
       createdAt: now,
@@ -1108,6 +1137,7 @@ async function upsertCoverage(
         coverageEnd: end.value,
         startDateState: start.state,
         endDateState: end.state,
+        benefits,
         updatedAt: now,
         version: sql`${coverage.version} + 1`,
       },
@@ -1129,6 +1159,7 @@ async function upsertCoverage(
       coverageEnd: saved.coverageEnd,
       startDateState: saved.startDateState,
       endDateState: saved.endDateState,
+      benefits,
       coveredPatientIds: record.coveredPatientIds,
     },
     createdAt: now,
@@ -1156,11 +1187,6 @@ function validatePerson(person: PersonInput, index: number, organizingFor: Organ
       });
     }
     return;
-  }
-  if (organizingFor === "self") {
-    throw new HttpError(422, "invalid_fields", "Check the highlighted fields.", {
-      [`${prefix}.authorityCategory`]: "This account is set up for you only. Change that choice before adding someone else.",
-    });
   }
   if (person.relationship === "self") {
     throw new HttpError(422, "invalid_fields", "Check the highlighted fields.", {
@@ -1192,7 +1218,7 @@ function assertFamilyComplete(organizingFor: OrganizingFor, people: { authorityC
 function familyIsValid(organizingFor: OrganizingFor, people: { authorityCategory: string }[]) {
   const selfCount = people.filter((item) => item.authorityCategory === "self").length;
   if (organizingFor === "someone_else") return selfCount === 0 && people.length > 0;
-  if (organizingFor === "self") return selfCount === 1 && people.every((item) => item.authorityCategory === "self");
+  if (organizingFor === "self") return selfCount === 1;
   return selfCount === 1;
 }
 
@@ -1202,6 +1228,26 @@ function normalizeDateField(
 ): { state: "known" | "unknown"; value: string | null } {
   if (field.state === "unknown") return { state: "unknown", value: null };
   return { state: "known", value: assertRealDate(field.value, key) };
+}
+
+function normalizePlanBenefits(value: PlanBenefits | undefined): PlanBenefits {
+  return {
+    deductible: value?.deductible ?? { state: "unknown" },
+    officeVisitCopay: value?.officeVisitCopay ?? { state: "unknown" },
+    coinsurance: value?.coinsurance ?? { state: "unknown" },
+    outOfPocketMax: value?.outOfPocketMax ?? { state: "unknown" },
+  };
+}
+
+function readPlanBenefits(value: unknown): PlanBenefits {
+  if (!value || typeof value !== "object") return UNKNOWN_PLAN_BENEFITS;
+  const record = value as Partial<PlanBenefits>;
+  return normalizePlanBenefits({
+    deductible: record.deductible ?? { state: "unknown" },
+    officeVisitCopay: record.officeVisitCopay ?? { state: "unknown" },
+    coinsurance: record.coinsurance ?? { state: "unknown" },
+    outOfPocketMax: record.outOfPocketMax ?? { state: "unknown" },
+  });
 }
 
 async function buildOnboardingBody(ctx: AppContext, actor: Actor, database: Database = ctx.db) {
@@ -1277,6 +1323,7 @@ async function loadPatientViews(db: Database, actor: Actor, householdId: string,
       birthDate: person.birthDate,
       relationship: person.relationship,
       authorityCategory: person.authorityCategory,
+      requestedScopes: invite?.requestedScopes ?? review?.requestedScopes ?? grant?.scopes ?? (person.authorityCategory === "self" ? SELF_SCOPES : DEFAULT_SHARED_SCOPES),
       profileState: person.profileState,
       version: person.version,
       viewerGrantStatus: grant?.status ?? null,
@@ -1291,7 +1338,7 @@ async function loadPatientViews(db: Database, actor: Actor, householdId: string,
           }
         : null,
       authorityReview: review
-        ? { status: review.status, claimedAuthority: review.claimedAuthority, policyReference: review.policyReference }
+        ? { status: review.status, claimedAuthority: review.claimedAuthority, policyReference: review.policyReference, requestedScopes: review.requestedScopes }
         : null,
       tasks: tasksFor(person.id, status),
       protectedRecordAccess: grant?.status === "active" && !(grant.expiresAt && grant.expiresAt <= now),
@@ -1358,6 +1405,7 @@ async function loadCoverageViews(db: Database, householdId: string, includeMembe
       start: record.startDateState === "known" ? { state: "known", value: record.coverageStart } : { state: "unknown" },
       end: record.endDateState === "known" ? { state: "known", value: record.coverageEnd } : { state: "unknown" },
       coveredPatientIds: links.map((link) => link.patientId),
+      benefits: readPlanBenefits(record.benefits),
       version: record.version,
     });
   }

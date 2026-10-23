@@ -63,7 +63,8 @@ describe("access approval", () => {
     });
     expect(approved.status).toBe(200);
     const allowed = await api(ctx, "/api/me", { cookie: member.cookie });
-    expect(allowed.data.home).toBe("/onboarding/profile");
+    expect(allowed.data.home).toBe("/onboarding");
+    expect(readMemoryMailbox().some((message) => message.purpose === "access_approved")).toBe(true);
   });
 
   it("refuses admin routes to members and does not let an admin deny themselves", async () => {
