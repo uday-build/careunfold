@@ -84,78 +84,145 @@ export function RemoveMemberButton({ userId }: { userId: string }) {
   );
 }
 
-export function SettingsPanel({
-  sessions,
-  preferences,
-  googleLinkAvailable,
-  providers,
-  privacyRequests,
-}: {
-  sessions: Array<{ id: string; userAgent: string | null; current: boolean; createdAt: string }>;
-  preferences: { timeZone: string; locale: string };
-  googleLinkAvailable: boolean;
-  providers: string[];
-  privacyRequests: Array<{ id: string; kind: string; status: string; detail: string }>;
-}) {
-  const router = useRouter();
+export function PreferencesForm({ preferences }: { preferences: { timeZone: string; locale: string } }) {
   const [timeZone, setTimeZone] = useState(preferences.timeZone);
   const [locale, setLocale] = useState(preferences.locale);
   const [message, setMessage] = useState("");
   return (
-    <div className="stack">
-      <section className="card stack">
-        <h2>Sessions</h2>
-        <ul className="list">
-          {sessions.map((session) => (
-            <li key={session.id} className="split">
-              <span>{session.current ? "This session" : "Other session"} · {session.userAgent || "Unknown device"}</span>
-              {!session.current ? (
-                <button className="secondary" type="button" onClick={async () => {
-                  await api(`/api/settings/sessions/${session.id}/revoke`, { method: "POST" });
-                  router.refresh();
-                }}>Revoke</button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      </section>
-      <section className="card stack">
-        <h2>Google</h2>
-        <p>{providers.includes("google") ? "Google is linked to this account." : "Google is not linked."}</p>
-        {googleLinkAvailable && !providers.includes("google") ? (
-          <button className="secondary" type="button" onClick={() => authClient.linkSocial({ provider: "google", callbackURL: "/app/settings" })}>
-            Link Google while signed in
-          </button>
-        ) : null}
-        {!googleLinkAvailable ? <p className="muted">Google sign-in is not configured, so linking cannot succeed.</p> : null}
-      </section>
-      <section className="card stack">
-        <h2>Preferences</h2>
-        <TextField id="timeZone" label="Time zone" value={timeZone} onChange={setTimeZone} />
-        <TextField id="locale" label="Locale" value={locale} onChange={setLocale} />
-        <button className="secondary" type="button" onClick={async () => {
-          const result = await api("/api/settings/preferences", { method: "POST", body: { timeZone, locale } });
-          setMessage(result.ok ? "Preferences saved." : result.data.error.message);
-        }}>Save preferences</button>
-      </section>
-      <section className="card stack">
-        <h2>Export and deletion</h2>
-        <p className="muted">Requests stay open. This version does not generate an export or erase data.</p>
-        <ul className="list">
-          {privacyRequests.map((item) => (
-            <li key={item.id} className="card">
-              <strong>{item.kind === "deletion" ? "Deletion" : "Export"} · {item.status}</strong>
-              <p className="muted">{item.detail}</p>
-            </li>
-          ))}
-        </ul>
-        <div className="actions">
-          <button className="secondary" type="button" onClick={async () => setMessage((await requestPrivacy("export")))}>Request export</button>
-          <button className="danger" type="button" onClick={async () => setMessage((await requestPrivacy("deletion")))}>Request deletion</button>
-        </div>
-      </section>
+    <form
+      className="stack"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        const result = await api("/api/settings/preferences", { method: "POST", body: { timeZone, locale } });
+        setMessage(result.ok ? "Preferences saved." : result.data.error.message);
+      }}
+    >
+      <TextField id="timeZone" label="Time zone" value={timeZone} onChange={setTimeZone} />
+      <TextField id="locale" label="Locale" value={locale} onChange={setLocale} />
       {message ? <p role="status">{message}</p> : null}
-    </div>
+      <button className="secondary" type="submit">Save preferences</button>
+    </form>
+  );
+}
+
+export function PasswordForm() {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [pending, setPending] = useState(false);
+  return (
+    <form
+      className="stack"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        setPending(true);
+        setMessage("");
+        const result = await authClient.changePassword({ currentPassword, newPassword, revokeOtherSessions: false });
+        setPending(false);
+        if (result.error) {
+          setMessage(result.error.message || "The password could not be changed.");
+          return;
+        }
+        setCurrentPassword("");
+        setNewPassword("");
+        setMessage("Password updated.");
+      }}
+    >
+      <TextField id="currentPassword" label="Current password" type="password" autoComplete="current-password" required value={currentPassword} onChange={setCurrentPassword} />
+      <TextField id="newPassword" label="New password" type="password" autoComplete="new-password" required value={newPassword} onChange={setNewPassword} />
+      <p className="muted">Use at least 12 characters. This does not sign out other sessions.</p>
+      {message ? <p role="status">{message}</p> : null}
+      <button className="primary" type="submit" disabled={pending}>{pending ? "Saving" : "Update password"}</button>
+    </form>
+  );
+}
+
+export function SessionList({ sessions }: { sessions: Array<{ id: string; userAgent: string | null; current: boolean; createdAt: string }> }) {
+  const router = useRouter();
+  return (
+    <ul className="list">
+      {sessions.map((session) => (
+        <li key={session.id} className="split">
+          <span>{session.current ? "This session" : "Other session"} · {session.userAgent || "Unknown device"}</span>
+          {!session.current ? (
+            <button className="secondary" type="button" onClick={async () => {
+              await api(`/api/settings/sessions/${session.id}/revoke`, { method: "POST" });
+              router.refresh();
+            }}>Revoke</button>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function GoogleLinkCard({ providers, googleLinkAvailable }: { providers: string[]; googleLinkAvailable: boolean }) {
+  return (
+    <section className="card stack">
+      <h2>Google</h2>
+      <p>{providers.includes("google") ? "Google is linked to this account." : "Google is not linked."}</p>
+      {googleLinkAvailable && !providers.includes("google") ? (
+        <button className="secondary" type="button" onClick={() => authClient.linkSocial({ provider: "google", callbackURL: "/app/account/security" })}>
+          Link Google while signed in
+        </button>
+      ) : null}
+      {!googleLinkAvailable ? <p className="muted">Google sign-in is not configured, so linking cannot succeed.</p> : null}
+    </section>
+  );
+}
+
+export function PrivacyCard({ privacyRequests }: { privacyRequests: Array<{ id: string; kind: string; status: string; detail: string }> }) {
+  const [message, setMessage] = useState("");
+  return (
+    <section className="card stack">
+      <h2>Export and deletion</h2>
+      <p className="muted">Requests stay open. This version does not generate an export or erase data.</p>
+      <ul className="list">
+        {privacyRequests.map((item) => (
+          <li key={item.id} className="card">
+            <strong>{item.kind === "deletion" ? "Deletion" : "Export"} · {item.status}</strong>
+            <p className="muted">{item.detail}</p>
+          </li>
+        ))}
+      </ul>
+      <div className="actions">
+        <button className="secondary" type="button" onClick={async () => setMessage(await requestPrivacy("export"))}>Request export</button>
+        <button className="danger" type="button" onClick={async () => setMessage(await requestPrivacy("deletion"))}>Request deletion</button>
+      </div>
+      {message ? <p role="status">{message}</p> : null}
+    </section>
+  );
+}
+
+export function CaseStartForm({ patients }: { patients: Array<{ id: string; givenName: string; familyName: string }> }) {
+  const [patientId, setPatientId] = useState(patients[0]?.id ?? "");
+  const [visitDate, setVisitDate] = useState("");
+  const [provider, setProvider] = useState("");
+  const [location, setLocation] = useState("");
+  const [reason, setReason] = useState("");
+  const [message, setMessage] = useState("");
+  return (
+    <form
+      className="stack"
+      onSubmit={(event) => {
+        event.preventDefault();
+        setMessage("Visit details are not saved yet. Case work comes next.");
+      }}
+    >
+      <label htmlFor="case-patient">Patient</label>
+      <select id="case-patient" value={patientId} onChange={(event) => setPatientId(event.target.value)} required={patients.length > 0}>
+        {patients.length === 0 ? <option value="">No patient profiles yet</option> : null}
+        {patients.map((person) => (
+          <option key={person.id} value={person.id}>{person.givenName} {person.familyName}</option>
+        ))}
+      </select>
+      <TextField id="visitDate" label="Visit date" type="date" value={visitDate} onChange={setVisitDate} required />
+      <TextField id="provider" label="Provider or clinician" value={provider} onChange={setProvider} />
+      <TextField id="location" label="Facility or location" value={location} onChange={setLocation} />
+      <TextField id="reason" label="Reason for the visit" value={reason} onChange={setReason} />
+      {message ? <p role="status">{message}</p> : null}
+      <button className="primary" type="submit">Save visit details</button>
+    </form>
   );
 }
 

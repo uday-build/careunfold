@@ -138,6 +138,89 @@ p:last-child { margin-bottom: 0; }
   border-bottom-color: var(--color-accent);
 }
 
+.workspace {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.workspace-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--color-hairline);
+  background: var(--color-surface);
+}
+
+.workspace-body {
+  display: grid;
+  grid-template-columns: 15.5rem 1fr;
+  min-height: 0;
+}
+
+.sidebar {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 16px 12px 32px;
+  border-right: 1px solid var(--color-hairline);
+  background: var(--color-surface);
+}
+
+.sidebar-group {
+  display: grid;
+  gap: 2px;
+}
+
+.sidebar-group > a,
+.sidebar-children a {
+  display: grid;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  color: var(--color-secondary);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.sidebar-detail {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-neutral-400);
+}
+
+.sidebar-group > a:hover,
+.sidebar-children a:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-primary);
+}
+
+.sidebar-group.is-current > a,
+.sidebar-children a[aria-current="page"] {
+  color: var(--color-primary);
+  background: var(--color-accent-soft);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+.sidebar-children {
+  display: grid;
+  gap: 2px;
+  padding: 0 0 8px 12px;
+}
+
+.sidebar-children a {
+  font-weight: 400;
+}
+
+.workspace-main {
+  padding: 32px 32px 64px;
+  max-width: 48rem;
+}
+
 h1, h2, h3 {
   font-family: var(--font-display);
   font-optical-sizing: auto;
@@ -548,6 +631,21 @@ code {
     font-size: 2.25rem;
     line-height: 1.12;
     letter-spacing: -0.035em;
+  }
+
+  .workspace-body {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-hairline);
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .workspace-main {
+    padding: 24px 16px 48px;
   }
 }
 
