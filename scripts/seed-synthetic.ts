@@ -7,6 +7,7 @@ import { household, onboardingState, user } from "../src/server/db/schema";
 import { createEmailSender } from "../src/server/email/delivery";
 import { readEnv } from "../src/server/env";
 import { completeReview, saveCoverageStep, saveFamily, saveProfile, type AppContext } from "../src/server/domain/service";
+import { createUnconfiguredFileStore } from "../src/server/storage/files";
 
 const ownerEmail = "fixture.owner@example.test";
 const adultEmail = "fixture.adult@example.test";
@@ -31,7 +32,7 @@ async function main() {
     now: () => new Date(),
   });
   const auth = createAuth({ db: opened.db, env, email });
-  const ctx: AppContext = { db: opened.db, auth, email, env, now: () => new Date() };
+  const ctx: AppContext = { db: opened.db, auth, email, env, storage: createUnconfiguredFileStore(), now: () => new Date() };
   try {
     const owner = await ensureUser(ctx, ownerEmail, password, "Fixture Owner");
     await ensureUser(ctx, adultEmail, password, "Fixture Adult");

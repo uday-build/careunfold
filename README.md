@@ -113,7 +113,18 @@ Set `SYNTHETIC_FIXTURE_PASSWORD` in `.env.local` to at least 12 characters, then
 npm run db:seed:synthetic
 ```
 
-This creates `fixture.owner@example.test` and `fixture.adult@example.test`, marks the household as a synthetic fixture, and leaves the adult invitation unsent. Sign in yourself. The command does not create a session. It refuses to run when `NODE_ENV=production`.
+This creates `fixture.owner@example.test` and `fixture.adult@example.test`, marks the household as a synthetic fixture, and leaves the adult invitation unsent. Sign in yourself with the password stored in `SYNTHETIC_FIXTURE_PASSWORD`. The command does not create a session. It refuses to run when `NODE_ENV=production`.
+
+## Document storage
+
+Visit details are stored in Postgres. File bytes go to a private Supabase Storage bucket named `visit-documents`. Add these from Supabase **Project Settings → API**:
+
+```bash
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SECRET_KEY=
+```
+
+Use the **secret** key (also labeled `service_role`). The publishable / anon key cannot store private visit documents. The secret stays on the server. Uploads are refused until both values are set. Comparison, extraction, and provider messages are not in this version.
 
 ## Access approval
 
@@ -135,7 +146,7 @@ Household membership lets someone administer the household. It does not grant ac
 
 ## Not in this version
 
-- Document upload, extraction, or AI
+- Document extraction or AI
 - Messages to providers or insurers
 - Balances, payments, or reconciliation
 - Public deployment

@@ -18,9 +18,18 @@ import {
   onboardingState,
   patient,
   privacyRequest,
+  uploadedDocument,
   user,
+  visit,
+  visitDocument,
 } from "../db/schema";
 import { createToken, hashToken, listDevOutbox, type EmailSender } from "../email/delivery";
+import {
+  ALLOWED_DOCUMENT_TYPES,
+  MAX_UPLOAD_BYTES,
+  VISIT_DOCUMENT_BUCKET,
+  type FileStore,
+} from "../storage/files";
 import type { AppEnv } from "../env";
 import { HttpError } from "../http/errors";
 import type { Auth } from "../auth/create-auth";
@@ -40,6 +49,7 @@ import {
   assertRealDate,
   UNKNOWN_PLAN_BENEFITS,
   coverageSaveSchema,
+  documentKindSchema,
   familyInputSchema,
   isUuid,
   memberAddSchema,
@@ -49,6 +59,7 @@ import {
   privacyRequestSchema,
   profileInputSchema,
   revokeSchema,
+  visitInputSchema,
   type PlanBenefits,
   type Scope,
 } from "./validation";
@@ -58,6 +69,7 @@ export type AppContext = {
   auth: Auth;
   email: EmailSender;
   env: AppEnv;
+  storage: FileStore;
   now: () => Date;
 };
 
@@ -419,6 +431,162 @@ export async function mutateProtectedRecords(ctx: AppContext, actor: Actor, pati
     "not_in_this_release",
     "Medical records, bills, and explanations of benefits are not available in this version.",
   );
+}
+
+export async function listVisits(ctx: AppContext, actor: Actor) {
+  requireApproved(actor);
+  const readable = await readablePatientIds(ctx, actor, "records.read");
+  if (readable.length === 0) return { ok: true, visits: [] as ReturnType<typeof visitSummary>[] };
+  const rows = await ctx.db
+    .select()
+    .from(visit)
+    .where(inArray(visit.patientId, readable))
+    .orderBy(desc(visit.visitDate), desc(visit.createdAt));
+  const people = await patientsById(ctx.db, rows.map((row) => row.patientId));
+  return {
+    ok: true,
+    visits: rows.map((row) => visitSummary(row, people.get(row.patientId))),
+  };
+}
+
+export async function createVisit(ctx: AppContext, actor: Actor, raw: unknown, idempotencyKeyValue: string) {
+  requireApproved(actor);
+  const input = parseInput(visitInputSchema, raw);
+  assertRealDate(input.visitDate, "visitDate");
+  if (!isUuid(input.patientId)) throw new HttpError(404, "not_found", "That record was not found.");
+  return withIdempotency(ctx, actor.id, "visit.create", idempotencyKeyValue, raw, async (tx) => {
+    const decision = await decidePatientAccess(tx, actor, input.patientId, "records.write", ctx.now());
+    if (!decision.allowed) throw new HttpError(decision.status, decision.code, decision.message);
+    const [person] = await tx.select().from(patient).where(eq(patient.id, input.patientId)).limit(1);
+    if (!person) throw new HttpError(404, "not_found", "That record was not found.");
+    const id = randomUUID();
+    await tx.insert(visit).values({
+      id,
+      patientId: person.id,
+      householdId: person.householdId,
+      visitDate: input.visitDate,
+      provider: input.provider,
+      location: input.location,
+      reason: input.reason,
+      status: "open",
+      createdByUserId: actor.id,
+      version: 1,
+      createdAt: ctx.now(),
+      updatedAt: ctx.now(),
+    });
+    await writeAudit(tx, ctx.now(), {
+      actorUserId: actor.id,
+      householdId: person.householdId,
+      eventName: "visit_created",
+      entityType: "visit",
+      entityId: id,
+    });
+    const [saved] = await tx.select().from(visit).where(eq(visit.id, id)).limit(1);
+    return { status: 201, body: { ok: true, visit: visitSummary(saved!, person) } };
+  });
+}
+
+export async function getVisit(ctx: AppContext, actor: Actor, visitId: string) {
+  requireApproved(actor);
+  if (!isUuid(visitId)) throw new HttpError(404, "not_found", "That case was not found.");
+  const [row] = await ctx.db.select().from(visit).where(eq(visit.id, visitId)).limit(1);
+  if (!row) throw new HttpError(404, "not_found", "That case was not found.");
+  const decision = await decidePatientAccess(ctx.db, actor, row.patientId, "records.read", ctx.now());
+  if (!decision.allowed) throw new HttpError(decision.status, decision.code, decision.message);
+  const [person] = await ctx.db.select().from(patient).where(eq(patient.id, row.patientId)).limit(1);
+  const links = await ctx.db.select().from(visitDocument).where(eq(visitDocument.visitId, row.id));
+  const documents = [];
+  for (const link of links) {
+    const [file] = await ctx.db.select().from(uploadedDocument).where(eq(uploadedDocument.id, link.documentId)).limit(1);
+    if (file) documents.push(documentSummary(file));
+  }
+  const write = await decidePatientAccess(ctx.db, actor, row.patientId, "records.write", ctx.now());
+  return {
+    ok: true,
+    visit: visitSummary(row, person),
+    documents,
+    canUpload: write.allowed,
+    storageConfigured: ctx.storage.available,
+  };
+}
+
+export async function attachDocument(
+  ctx: AppContext,
+  actor: Actor,
+  visitId: string,
+  input: { kind: unknown; filename: string; mimeType: string; bytes: Uint8Array },
+) {
+  requireApproved(actor);
+  if (!isUuid(visitId)) throw new HttpError(404, "not_found", "That case was not found.");
+  const kind = parseInput(documentKindSchema, input.kind);
+  const [row] = await ctx.db.select().from(visit).where(eq(visit.id, visitId)).limit(1);
+  if (!row) throw new HttpError(404, "not_found", "That case was not found.");
+  const decision = await decidePatientAccess(ctx.db, actor, row.patientId, "records.write", ctx.now());
+  if (!decision.allowed) throw new HttpError(decision.status, decision.code, decision.message);
+  if (!ctx.storage.available) {
+    throw new HttpError(503, "storage_unconfigured", "Document storage is not configured yet. Visit details are still saved.");
+  }
+  const mimeType = inferMimeType(input.filename, input.mimeType);
+  if (!ALLOWED_DOCUMENT_TYPES[mimeType]) {
+    throw new HttpError(422, "unsupported_type", "Upload a PDF, JPEG, PNG, or WebP file.");
+  }
+  if (input.bytes.byteLength === 0) {
+    throw new HttpError(422, "empty_file", "Choose a file to upload.");
+  }
+  if (input.bytes.byteLength > MAX_UPLOAD_BYTES) {
+    throw new HttpError(422, "file_too_large", "Use a file of 4 MB or smaller.");
+  }
+  const filename = safeFilename(input.filename);
+  const id = randomUUID();
+  const storagePath = `${row.patientId}/${row.id}/${id}/${filename}`;
+  const checksumSha256 = createHash("sha256").update(input.bytes).digest("hex");
+  await ctx.storage.put(storagePath, input.bytes, mimeType);
+  await ctx.db.insert(uploadedDocument).values({
+    id,
+    patientId: row.patientId,
+    householdId: row.householdId,
+    kind,
+    originalFilename: filename,
+    mimeType,
+    byteSize: input.bytes.byteLength,
+    storageBucket: VISIT_DOCUMENT_BUCKET,
+    storagePath,
+    checksumSha256,
+    status: "stored",
+    uploadedByUserId: actor.id,
+    createdAt: ctx.now(),
+    updatedAt: ctx.now(),
+  });
+  await ctx.db.insert(visitDocument).values({
+    visitId: row.id,
+    documentId: id,
+    createdAt: ctx.now(),
+  });
+  await writeAudit(ctx.db, ctx.now(), {
+    actorUserId: actor.id,
+    householdId: row.householdId,
+    eventName: "document_uploaded",
+    entityType: "uploaded_document",
+    entityId: id,
+  });
+  const [stored] = await ctx.db.select().from(uploadedDocument).where(eq(uploadedDocument.id, id)).limit(1);
+  return { ok: true, document: stored ? documentSummary(stored) : { id } };
+}
+
+export async function downloadDocument(ctx: AppContext, actor: Actor, documentId: string) {
+  requireApproved(actor);
+  if (!isUuid(documentId)) throw new HttpError(404, "not_found", "That document was not found.");
+  const [file] = await ctx.db.select().from(uploadedDocument).where(eq(uploadedDocument.id, documentId)).limit(1);
+  if (!file) throw new HttpError(404, "not_found", "That document was not found.");
+  const decision = await decidePatientAccess(ctx.db, actor, file.patientId, "records.read", ctx.now());
+  if (!decision.allowed) throw new HttpError(decision.status, decision.code, decision.message);
+  const stored = await ctx.storage.get(file.storagePath);
+  if (!stored) throw new HttpError(404, "not_found", "That document was not found.");
+  return {
+    bytes: stored.bytes,
+    contentType: file.mimeType,
+    filename: file.originalFilename,
+  };
 }
 
 export async function revokeGrant(ctx: AppContext, actor: Actor, patientId: string, raw: unknown) {
@@ -1609,6 +1777,84 @@ function canonicalJson(value: unknown): string {
     return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
   }
   return JSON.stringify(value);
+}
+
+function visitSummary(
+  row: {
+    id: string;
+    patientId: string;
+    visitDate: string;
+    provider: string | null;
+    location: string | null;
+    reason: string | null;
+    status: string;
+  },
+  person?: { givenName: string; familyName: string } | null,
+) {
+  return {
+    id: row.id,
+    patientId: row.patientId,
+    visitDate: row.visitDate,
+    provider: row.provider,
+    location: row.location,
+    reason: row.reason,
+    status: row.status,
+    patientName: person ? `${person.givenName} ${person.familyName}` : "Patient",
+  };
+}
+
+function documentSummary(file: {
+  id: string;
+  kind: string;
+  originalFilename: string;
+  mimeType: string;
+  byteSize: number;
+  createdAt: Date;
+}) {
+  return {
+    id: file.id,
+    kind: file.kind,
+    filename: file.originalFilename,
+    mimeType: file.mimeType,
+    byteSize: file.byteSize,
+    createdAt: file.createdAt.toISOString(),
+  };
+}
+
+async function readablePatientIds(ctx: AppContext, actor: Actor, scope: Scope) {
+  const grants = await ctx.db
+    .select()
+    .from(accessGrant)
+    .where(and(eq(accessGrant.userId, actor.id), eq(accessGrant.status, "active")));
+  const now = ctx.now();
+  return grants
+    .filter((grant) => grant.scopes.includes(scope) && (!grant.expiresAt || grant.expiresAt > now))
+    .map((grant) => grant.patientId);
+}
+
+async function patientsById(db: Database, ids: string[]) {
+  const unique = [...new Set(ids)];
+  const map = new Map<string, { id: string; givenName: string; familyName: string }>();
+  if (unique.length === 0) return map;
+  const rows = await db.select().from(patient).where(inArray(patient.id, unique));
+  for (const row of rows) map.set(row.id, row);
+  return map;
+}
+
+function inferMimeType(filename: string, mimeType: string) {
+  if (ALLOWED_DOCUMENT_TYPES[mimeType]) return mimeType;
+  const lower = filename.toLowerCase();
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".webp")) return "image/webp";
+  return mimeType;
+}
+
+function safeFilename(value: string) {
+  const base = value.replace(/\\/g, "/").split("/").pop() ?? "upload";
+  const cleaned = base.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120);
+  return cleaned || "upload";
 }
 
 function requireVerified(actor: Actor) {

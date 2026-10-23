@@ -8,7 +8,9 @@ async function main() {
   try {
     await opened.db.execute(sql`select 1 as ok`);
   } catch (error) {
-    console.error(error instanceof Error ? error.message : "Database check failed.");
+    const cause = error instanceof Error && error.cause instanceof Error ? error.cause : error;
+    const message = cause instanceof Error ? cause.message : "Database check failed.";
+    console.error(message.replace(/postgres(?:ql)?:\/\/[^@\s]+@/g, "postgres://redacted@"));
     process.exit(1);
   } finally {
     await opened.close();
@@ -20,6 +22,7 @@ async function main() {
         authUrl: env.authUrl,
         googleSignIn: env.googleEnabled,
         emailDelivery: env.emailDelivery,
+        documentStorage: env.supabaseUrl && env.supabaseServiceRoleKey ? "supabase" : "unconfigured",
         googleRedirectPath: "/api/auth/callback/google",
         adminConfigured: Boolean(env.adminEmail),
       },
@@ -38,6 +41,9 @@ async function main() {
   }
   if (env.emailDelivery === "dev-sink") {
     console.log("Email delivery is the local outbox at /dev/outbox. Messages are not sent to an inbox.");
+  }
+  if (!env.supabaseUrl || !env.supabaseServiceRoleKey) {
+    console.log("Document storage is not configured. Add SUPABASE_URL and SUPABASE_SECRET_KEY (the service_role secret, not the publishable key) to store uploads.");
   }
 }
 

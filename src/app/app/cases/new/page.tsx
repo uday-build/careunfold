@@ -23,8 +23,8 @@ export default async function NewCasePage() {
       <p><Link href="/app/cases">Back to cases</Link></p>
       <p className="eyebrow">New case</p>
       <h1>Visit details</h1>
-      <p className="lede">A case begins with who was seen, when, and where. Saving a visit is not enabled yet.</p>
-      <Notice tone="info" title="Visit first">Upload, comparison, and a draft question stay closed until visit details can be kept.</Notice>
+      <p className="lede">A case begins with who was seen, when, and where. Documents can be added after this visit is saved.</p>
+      <Notice tone="info" title="Visit first">Comparison and a draft question stay closed until documents are on file.</Notice>
       <CaseStartForm
         patients={patients.map((person) => ({
           id: person.id,

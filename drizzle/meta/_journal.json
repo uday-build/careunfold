@@ -22,6 +22,13 @@
       "when": 1761163200000,
       "tag": "0002_coverage_benefits",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1761235200000,
+      "tag": "0003_visits_documents",
+      "breakpoints": true
     }
   ]
 }

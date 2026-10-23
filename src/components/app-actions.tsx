@@ -195,18 +195,33 @@ export function PrivacyCard({ privacyRequests }: { privacyRequests: Array<{ id: 
 }
 
 export function CaseStartForm({ patients }: { patients: Array<{ id: string; givenName: string; familyName: string }> }) {
+  const router = useRouter();
   const [patientId, setPatientId] = useState(patients[0]?.id ?? "");
   const [visitDate, setVisitDate] = useState("");
   const [provider, setProvider] = useState("");
   const [location, setLocation] = useState("");
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
+  const [pending, setPending] = useState(false);
   return (
     <form
       className="stack"
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
-        setMessage("Visit details are not saved yet. Case work comes next.");
+        setPending(true);
+        setMessage("");
+        const result = await api<{ visit: { id: string } }>("/api/cases", {
+          method: "POST",
+          idempotencyKey: crypto.randomUUID(),
+          body: { patientId, visitDate, provider, location, reason },
+        });
+        setPending(false);
+        if (!result.ok) {
+          setMessage(result.data.error.message);
+          return;
+        }
+        router.push(`/app/cases/${result.data.visit.id}`);
+        router.refresh();
       }}
     >
       <label htmlFor="case-patient">Patient</label>
@@ -221,7 +236,59 @@ export function CaseStartForm({ patients }: { patients: Array<{ id: string; give
       <TextField id="location" label="Facility or location" value={location} onChange={setLocation} />
       <TextField id="reason" label="Reason for the visit" value={reason} onChange={setReason} />
       {message ? <p role="status">{message}</p> : null}
-      <button className="primary" type="submit">Save visit details</button>
+      <button className="primary" type="submit" disabled={pending || patients.length === 0}>{pending ? "Saving" : "Save visit details"}</button>
+    </form>
+  );
+}
+
+export function DocumentUploadForm({ caseId, storageConfigured }: { caseId: string; storageConfigured: boolean }) {
+  const router = useRouter();
+  const [message, setMessage] = useState("");
+  const [pending, setPending] = useState(false);
+  if (!storageConfigured) {
+    return <p className="muted">Visit details are saved. Document storage is not configured yet.</p>;
+  }
+  return (
+    <form
+      className="stack"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        setPending(true);
+        setMessage("");
+        let response: Response;
+        try {
+          response = await fetch(`/api/cases/${caseId}/documents`, {
+            method: "POST",
+            body: new FormData(form),
+            credentials: "same-origin",
+          });
+        } catch {
+          setPending(false);
+          setMessage("We couldn't reach CareUnfold. Nothing was stored.");
+          return;
+        }
+        const data = (await response.json()) as { document?: { id: string }; error?: { message: string } };
+        setPending(false);
+        if (!response.ok) {
+          setMessage(data.error?.message ?? "The document was not stored.");
+          return;
+        }
+        form.reset();
+        router.refresh();
+      }}
+    >
+      <label htmlFor="kind">Document type</label>
+      <select id="kind" name="kind" required defaultValue="bill">
+        <option value="bill">Bill</option>
+        <option value="eob">Explanation of benefits</option>
+        <option value="receipt">Receipt</option>
+        <option value="other">Other</option>
+      </select>
+      <label htmlFor="file">File (PDF or image, 4 MB or smaller)</label>
+      <input id="file" name="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required />
+      {message ? <p role="status">{message}</p> : null}
+      <button className="primary" type="submit" disabled={pending}>{pending ? "Uploading" : "Upload"}</button>
     </form>
   );
 }

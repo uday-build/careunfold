@@ -6,6 +6,7 @@ import { applyMigrations } from "@/server/db/client";
 import { clearMemoryMailbox, createEmailSender, readMemoryMailbox } from "@/server/email/delivery";
 import { readEnv, type AppEnv } from "@/server/env";
 import { dispatch } from "@/server/http/router";
+import { createMemoryFileStore } from "@/server/storage/files";
 import type { AppContext } from "@/server/domain/service";
 
 export const origin = "http://localhost:3000";
@@ -23,7 +24,7 @@ export async function createTestContext(envOverrides: Partial<AppEnv> = {}) {
     now: () => now,
   });
   const auth = createAuth({ db: opened.db, env, email });
-  const ctx: AppContext = { db: opened.db, auth, email, env, now: () => now };
+  const ctx: AppContext = { db: opened.db, auth, email, env, storage: createMemoryFileStore(), now: () => now };
   return {
     ctx,
     env,
@@ -41,6 +42,9 @@ export async function resetData(ctx: AppContext) {
   clearMemoryMailbox();
   await ctx.db.execute(sql`
     TRUNCATE TABLE
+      visit_document,
+      uploaded_document,
+      visit,
       privacy_request,
       dev_email_outbox,
       audit_event,

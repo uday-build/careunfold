@@ -1,9 +1,11 @@
 import path from "node:path";
 import { applyMigrations } from "../src/server/db/client";
+import { readEnv } from "../src/server/env";
 
 async function main() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
+  const env = readEnv();
+  const databaseUrl = env.directUrl ?? env.databaseUrl;
+  if (!databaseUrl.startsWith("postgres://") && !databaseUrl.startsWith("postgresql://") && !databaseUrl.startsWith("pglite:")) {
     console.error("DATABASE_URL is missing. Copy .env.example to .env.local first.");
     process.exit(1);
   }

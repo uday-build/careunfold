@@ -3,11 +3,16 @@ import type { AppContext } from "../domain/service";
 import {
   acceptInvitation,
   addHouseholdMember,
+  attachDocument,
   cancelInvitation,
   completeReview,
   createPrivacyRequest,
+  createVisit,
   decideAccess,
+  downloadDocument,
+  getVisit,
   listAccessRequests,
+  listVisits,
   getDevOutbox,
   getHousehold,
   getHouseholdById,
@@ -158,6 +163,48 @@ async function route(request: Request, ctx: AppContext, path: string, actor: Act
   }
   if (request.method === "POST" && path === "/api/settings/privacy-requests") {
     return json(200, await createPrivacyRequest(ctx, requireActor(actor), await readJson(request)));
+  }
+
+  if (request.method === "GET" && path === "/api/cases") {
+    return json(200, await listVisits(ctx, requireActor(actor)));
+  }
+  if (request.method === "POST" && path === "/api/cases") {
+    const result = await createVisit(ctx, requireActor(actor), await readJson(request), idempotencyKey(request));
+    return json(result.status, result.body);
+  }
+  const caseDocuments = path.match(/^\/api\/cases\/([^/]+)\/documents$/);
+  if (caseDocuments && request.method === "POST") {
+    const form = await request.formData();
+    const uploaded = form.get("file");
+    if (!(uploaded instanceof File)) {
+      throw new HttpError(422, "empty_file", "Choose a file to upload.");
+    }
+    const bytes = new Uint8Array(await uploaded.arrayBuffer());
+    return json(
+      201,
+      await attachDocument(ctx, requireActor(actor), caseDocuments[1], {
+        kind: form.get("kind"),
+        filename: uploaded.name,
+        mimeType: uploaded.type || "application/octet-stream",
+        bytes,
+      }),
+    );
+  }
+  const caseMatch = path.match(/^\/api\/cases\/([^/]+)$/);
+  if (caseMatch && request.method === "GET") {
+    return json(200, await getVisit(ctx, requireActor(actor), caseMatch[1]));
+  }
+  const documentMatch = path.match(/^\/api\/documents\/([^/]+)$/);
+  if (documentMatch && request.method === "GET") {
+    const file = await downloadDocument(ctx, requireActor(actor), documentMatch[1]);
+    return new Response(Buffer.from(file.bytes), {
+      status: 200,
+      headers: {
+        "content-type": file.contentType,
+        "content-disposition": `attachment; filename="${file.filename.replace(/["\\]/g, "")}"`,
+        "cache-control": "no-store",
+      },
+    });
   }
 
   throw new HttpError(404, "not_found", "That page was not found.");

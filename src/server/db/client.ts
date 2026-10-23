@@ -8,8 +8,18 @@ import { migrate as migratePostgres } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import { schema } from "./schema";
 
+function postgresClientOptions(url: string) {
+  const pooled = /pooler\.supabase\.com|:6543\b|pgbouncer=true/i.test(url);
+  const needsSsl = /supabase\.(co|com)|neon\.tech|amazonaws\.com/i.test(url);
+  return {
+    max: pooled || process.env.VERCEL ? 1 : 10,
+    prepare: pooled ? false : undefined,
+    ssl: needsSsl ? ("require" as const) : undefined,
+  };
+}
+
 export function createPostgresDatabase(url: string) {
-  const client = postgres(url, { max: 10 });
+  const client = postgres(url, postgresClientOptions(url));
   const db = drizzlePostgres(client, { schema });
   return { db, close: () => client.end() };
 }

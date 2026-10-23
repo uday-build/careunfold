@@ -147,6 +147,24 @@ export const privacyRequestSchema = z.object({
   kind: z.enum(["export", "deletion"]),
 });
 
+const optionalNote = z
+  .string()
+  .trim()
+  .max(200)
+  .optional()
+  .nullable()
+  .transform((value) => (value ? value : null));
+
+export const visitInputSchema = z.object({
+  patientId: z.string().trim().min(1),
+  visitDate: z.string().trim(),
+  provider: optionalNote,
+  location: optionalNote,
+  reason: optionalNote,
+});
+
+export const documentKindSchema = z.enum(["bill", "eob", "receipt", "other"]);
+
 export function parseInput<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
   if (!result.success) {

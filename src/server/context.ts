@@ -3,6 +3,7 @@ import { createAuth, type Auth } from "./auth/create-auth";
 import { createDatabase, type AppDatabase } from "./db/client";
 import { createEmailSender, type EmailSender } from "./email/delivery";
 import { readEnv, type AppEnv } from "./env";
+import { createSupabaseFileStore } from "./storage/files";
 import type { AppContext } from "./domain/service";
 
 type Runtime = {
@@ -22,6 +23,10 @@ export function getContext(): AppContext {
     auth: runtime.auth,
     email: runtime.email,
     env: runtime.env,
+    storage: createSupabaseFileStore({
+      url: runtime.env.supabaseUrl,
+      serviceRoleKey: runtime.env.supabaseServiceRoleKey,
+    }),
     now: () => new Date(),
   };
 }

@@ -370,6 +370,78 @@ export const jurisdictionPolicy = pgTable("jurisdiction_policy", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
+export const visit = pgTable(
+  "visit",
+  {
+    id: uuid("id").primaryKey(),
+    patientId: uuid("patient_id")
+      .notNull()
+      .references(() => patient.id, { onDelete: "cascade" }),
+    householdId: uuid("household_id")
+      .notNull()
+      .references(() => household.id, { onDelete: "cascade" }),
+    visitDate: date("visit_date", { mode: "string" }).notNull(),
+    provider: text("provider"),
+    location: text("location"),
+    reason: text("reason"),
+    status: text("status").notNull().default("open"),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    version: integer("version").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index("visit_patient_idx").on(table.patientId),
+    index("visit_household_idx").on(table.householdId),
+  ],
+);
+
+export const uploadedDocument = pgTable(
+  "uploaded_document",
+  {
+    id: uuid("id").primaryKey(),
+    patientId: uuid("patient_id")
+      .notNull()
+      .references(() => patient.id, { onDelete: "cascade" }),
+    householdId: uuid("household_id")
+      .notNull()
+      .references(() => household.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    originalFilename: text("original_filename").notNull(),
+    mimeType: text("mime_type").notNull(),
+    byteSize: integer("byte_size").notNull(),
+    storageBucket: text("storage_bucket").notNull(),
+    storagePath: text("storage_path").notNull().unique(),
+    checksumSha256: text("checksum_sha256").notNull(),
+    status: text("status").notNull().default("stored"),
+    uploadedByUserId: text("uploaded_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index("uploaded_document_patient_idx").on(table.patientId),
+    index("uploaded_document_household_idx").on(table.householdId),
+  ],
+);
+
+export const visitDocument = pgTable(
+  "visit_document",
+  {
+    visitId: uuid("visit_id")
+      .notNull()
+      .references(() => visit.id, { onDelete: "cascade" }),
+    documentId: uuid("document_id")
+      .notNull()
+      .references(() => uploadedDocument.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [uniqueIndex("visit_document_idx").on(table.visitId, table.documentId)],
+);
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
@@ -405,6 +477,9 @@ export const schema = {
   devEmailOutbox,
   actionRate,
   jurisdictionPolicy,
+  visit,
+  uploadedDocument,
+  visitDocument,
   userRelations,
   sessionRelations,
   accountRelations,

@@ -3,6 +3,7 @@ export type EmailDeliveryMode = "resend" | "dev-sink" | "memory" | "unconfigured
 export type AppEnv = {
   nodeEnv: string;
   databaseUrl: string;
+  directUrl: string | null;
   authSecret: string;
   authUrl: string;
   trustedOrigins: string[];
@@ -16,6 +17,8 @@ export type AppEnv = {
   resetExpiresIn: number;
   invitationExpiresInMs: number;
   adminEmail: string | null;
+  supabaseUrl: string | null;
+  supabaseServiceRoleKey: string | null;
 };
 
 const DEV_SECRET_MIN = 32;
@@ -26,6 +29,7 @@ export function readEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is required. Copy .env.example to .env.local and set it.");
   }
+  const directUrl = usablePostgresUrl(source.DIRECT_URL);
   const authSecret = source.BETTER_AUTH_SECRET?.trim() ?? "";
   if (authSecret.length < DEV_SECRET_MIN) {
     throw new Error("BETTER_AUTH_SECRET must be at least 32 characters. Generate one with: openssl rand -base64 32");
@@ -49,6 +53,7 @@ export function readEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
   return {
     nodeEnv,
     databaseUrl,
+    directUrl,
     authSecret,
     authUrl,
     trustedOrigins: [origin],
@@ -62,6 +67,9 @@ export function readEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     resetExpiresIn: numberFrom(source.AUTH_RESET_EXPIRES_IN, 60 * 60),
     invitationExpiresInMs: numberFrom(source.INVITATION_EXPIRES_IN_HOURS, 24 * 7) * 60 * 60 * 1000,
     adminEmail: blankToNull(source.ADMIN_EMAIL)?.toLowerCase() ?? null,
+    supabaseUrl: blankToNull(source.SUPABASE_URL) ?? blankToNull(source.NEXT_PUBLIC_SUPABASE_URL),
+    supabaseServiceRoleKey:
+      blankToNull(source.SUPABASE_SERVICE_ROLE_KEY) ?? blankToNull(source.SUPABASE_SECRET_KEY),
   };
 }
 
@@ -85,6 +93,18 @@ function resolveEmailDelivery(input: {
   }
   if (input.resendApiKey && input.emailFrom) return "resend";
   return "unconfigured";
+}
+
+function usablePostgresUrl(value: string | undefined): string | null {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed.startsWith("postgres://") && !trimmed.startsWith("postgresql://")) return null;
+  try {
+    const host = trimmed.split("@").pop()?.split("/")[0]?.split(":")[0] ?? "";
+    if (!host || host === "HOST" || host === "localhost") return null;
+    return trimmed;
+  } catch {
+    return null;
+  }
 }
 
 function blankToNull(value: string | undefined): string | null {
