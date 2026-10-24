@@ -36,32 +36,52 @@ export function AccessReviewList({ users, currentUserId }: { users: AccessUser[]
   return (
     <div className="stack">
       {message ? <p className="form-error" role="alert">Error: {message}</p> : null}
-      <ul className="list">
-        {users.map((item) => (
-          <li className="card split" key={item.id}>
-            <div className="stack">
-              <strong>{item.name || item.email}</strong>
-              <div className="muted">{item.email}</div>
-              <div className="status">{item.accessStatus}{item.role === "admin" ? " · admin" : ""}{item.emailVerified ? "" : " · email not verified"}</div>
-              <p className="muted">{providerLabel(item.providers)} · {new Date(item.createdAt).toISOString().slice(0, 10)}</p>
-            </div>
-            {item.id === currentUserId || item.role === "admin" ? (
-              <p className="muted">Administrator</p>
-            ) : (
-              <div className="actions">
-                <button className="primary" type="button" disabled={pendingId === item.id || item.accessStatus === "approved"} onClick={() => decide(item.id, "approved")}>
-                  Approve
-                </button>
-                <button className="danger" type="button" disabled={pendingId === item.id || item.accessStatus === "denied"} onClick={() => decide(item.id, "denied")}>
-                  Deny
-                </button>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+      <div className="review-wrap">
+      <table className="review-table">
+        <caption className="visually-hidden">Incoming access requests</caption>
+        <thead>
+          <tr>
+            <th scope="col">Account</th>
+            <th scope="col">Requested</th>
+            <th scope="col">Decision</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((item) => (
+            <tr key={item.id}>
+              <td>
+                <strong>{item.name || item.email}</strong>
+                <div className="muted">{item.email}</div>
+                <div className="muted">{providerLabel(item.providers)}</div>
+              </td>
+              <td>{formatRequested(item.createdAt)}</td>
+              <td>
+                {item.id === currentUserId || item.role === "admin" ? (
+                  <p className="muted">Administrator</p>
+                ) : (
+                  <div className="actions">
+                    <button className="primary" type="button" disabled={pendingId === item.id} onClick={() => decide(item.id, "approved")}>
+                      Approve
+                    </button>
+                    <button className="danger" type="button" disabled={pendingId === item.id} onClick={() => decide(item.id, "denied")}>
+                      Deny
+                    </button>
+                  </div>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      </div>
     </div>
   );
+}
+
+function formatRequested(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
 function providerLabel(providers: string[]): string {

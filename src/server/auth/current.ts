@@ -1,10 +1,12 @@
 import { headers } from "next/headers";
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { getContext } from "@/server/context";
 import { loadActor, type Actor } from "@/server/domain/access";
 import { getOnboarding, homeFor } from "@/server/domain/service";
 
 export async function currentActor(): Promise<{ actor: Actor | null }> {
+  await connection();
   const context = getContext();
   const session = await context.auth.api.getSession({ headers: await headers() });
   if (!session) return { actor: null };

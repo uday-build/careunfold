@@ -3,6 +3,8 @@ import { AccountHeader } from "@/components/account-header";
 import { AppSidebar } from "@/components/app-sidebar";
 import { currentActor } from "@/server/auth/current";
 
+export const dynamic = "force-dynamic";
+
 export default async function AppSectionLayout({ children }: { children: React.ReactNode }) {
   const { actor } = await currentActor();
   return (
@@ -12,7 +14,7 @@ export default async function AppSectionLayout({ children }: { children: React.R
         <AccountHeader signedIn={Boolean(actor)} isAdmin={actor?.role === "admin"} />
       </header>
       <div className="workspace-body">
-        <AppSidebar />
+        <AppSidebar isAdmin={actor?.role === "admin"} />
         <main id="main" className="workspace-main">{children}</main>
       </div>
     </div>

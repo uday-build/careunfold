@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { requireVerifiedActor } from "@/server/auth/current";
 import { getContext } from "@/server/context";
 import { getPublicConfig } from "@/server/domain/service";
@@ -6,6 +7,7 @@ import { getPublicConfig } from "@/server/domain/service";
 const order = ["profile", "family", "coverage", "review", "complete"] as const;
 
 export async function loadPublicConfig() {
+  await connection();
   const config = await getPublicConfig(getContext());
   return {
     googleSignIn: config.googleSignIn,

@@ -36,11 +36,17 @@ function isCurrent(pathname: string, href: string, exact = false) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppSidebar() {
+export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
+  const navItems = isAdmin
+    ? [
+        ...items,
+        { href: "/app/admin", label: "Admin", detail: "Incoming access requests" },
+      ]
+    : items;
   return (
     <nav className="sidebar" aria-label="Workspace">
-      {items.map((item) => {
+      {navItems.map((item) => {
         const current = isCurrent(pathname, item.href);
         return (
           <div className={current ? "sidebar-group is-current" : "sidebar-group"} key={item.href}>
