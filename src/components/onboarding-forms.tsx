@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Notice, TextField } from "@/components/shell";
@@ -11,6 +12,15 @@ import {
   type PlanBenefits,
   type Scope,
 } from "@/server/domain/validation";
+
+const RELATIONSHIPS = [
+  { value: "spouse", label: "Spouse" },
+  { value: "parent", label: "Parent" },
+  { value: "child", label: "Child" },
+  { value: "sibling", label: "Sibling" },
+  { value: "other_adult", label: "Another adult" },
+  { value: "other", label: "Other" },
+] as const;
 
 type Organizing = "self" | "someone_else" | "both";
 type Authority = "self" | "adult_invitation" | "minor_representative" | "dependent_adult_representative";
@@ -52,6 +62,7 @@ export type CoverageDraft = {
 type Onboarding = {
   displayName: string | null;
   organizingFor: Organizing | null;
+  currentStep?: "profile" | "family" | "coverage" | "review" | "complete";
   patients: PatientDraft[];
   coverage: CoverageSource[];
 };
@@ -120,18 +131,54 @@ export function ProfileForm({ onboarding }: { onboarding: Onboarding }) {
   );
 }
 
-export function FamilyForm({ onboarding, continueTo = "/onboarding/coverage" }: { onboarding: Onboarding; continueTo?: string }) {
+export function FamilyForm({
+  onboarding,
+  continueTo,
+  onSaved,
+  onCancel,
+  saveLabel = "Save and continue",
+}: {
+  onboarding: Onboarding;
+  continueTo?: string;
+  onSaved?: (onboarding: Onboarding) => void;
+  onCancel?: () => void;
+  saveLabel?: string;
+}) {
   const router = useRouter();
   const key = useRef(crypto.randomUUID());
   const organizing = onboarding.organizingFor ?? "self";
   const [people, setPeople] = useState<PatientDraft[]>(() => initialPeople(onboarding.patients, organizing));
+  const [selectedKey, setSelectedKey] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState("");
+  const nextStep = continueTo ?? familyContinueTo(onboarding.currentStep);
+  const selected = people.find((person) => person.clientKey === selectedKey) ?? people[0];
+  const selectedIndex = selected ? people.indexOf(selected) : -1;
 
   function update(index: number, patch: Partial<PatientDraft>) {
     setPeople((current) => current.map((person, itemIndex) => (itemIndex === index ? { ...person, ...patch } : person)));
+  }
+
+  function addPerson() {
+    const next = emptyPerson("adult_invitation");
+    setPeople((current) => [...current, next]);
+    setSelectedKey(next.clientKey);
+  }
+
+  async function removePerson(person: PatientDraft) {
+    if (person.authorityCategory === "self") return;
+    if (person.id) {
+      const removed = await api(`/api/patients/${person.id}/remove`, { method: "POST" });
+      if (!removed.ok) {
+        setNotice(removed.data.error.message);
+        return;
+      }
+    }
+    setPeople((current) => current.filter((item) => item.clientKey !== person.clientKey));
+    setSelectedKey((currentKey) => (currentKey === person.clientKey ? "" : currentKey));
+    if (person.id) router.refresh();
   }
 
   return (
@@ -156,141 +203,64 @@ export function FamilyForm({ onboarding, continueTo = "/onboarding/coverage" }: 
         });
         setPending(false);
         if (!result.ok) {
-          setErrors(result.data.error.fields ?? {});
+          const fields = result.data.error.fields ?? {};
+          setErrors(fields);
           setFormError(result.data.error.message);
+          const errorIndex = firstPatientErrorIndex(fields);
+          if (errorIndex != null && people[errorIndex]) setSelectedKey(people[errorIndex].clientKey);
           return;
         }
         key.current = crypto.randomUUID();
-        router.push(continueTo);
+        if (onSaved) {
+          onSaved(result.data.onboarding);
+          return;
+        }
+        router.push(nextStep);
         router.refresh();
       }}
     >
-      <RelationshipGraph displayName={onboarding.displayName} organizing={organizing} people={people} />
-      {people.map((person, index) => (
-        <section className="card stack" key={person.clientKey}>
-          <h2>{person.authorityCategory === "self" ? "Primary account holder" : `Patient ${index + (people[0]?.authorityCategory === "self" ? 0 : 1)}`}</h2>
-          {person.status ? <Notice tone={person.status.code === "active" ? "active" : "pending"} title={person.status.label}>{person.status.detail}</Notice> : null}
-          <div className="person-grid">
-            <TextField id={`given-${person.clientKey}`} label="Given name" required value={person.givenName} error={errors[`patients.${index}.givenName`]} onChange={(givenName) => update(index, { givenName })} />
-            <TextField id={`family-${person.clientKey}`} label="Family name" required value={person.familyName} error={errors[`patients.${index}.familyName`]} onChange={(familyName) => update(index, { familyName })} />
-            <TextField id={`preferred-${person.clientKey}`} label="Preferred name (optional)" value={person.preferredName ?? ""} onChange={(preferredName) => update(index, { preferredName })} />
-            <TextField id={`birth-${person.clientKey}`} label="Birth date" type="date" required value={person.birthDate} error={errors[`patients.${index}.birthDate`]} onChange={(birthDate) => update(index, { birthDate })} />
-          </div>
-          {person.authorityCategory !== "self" ? (
-            <>
-              <label htmlFor={`relationship-${person.clientKey}`}>Relationship to the primary account holder</label>
-              <select id={`relationship-${person.clientKey}`} value={person.relationship} onChange={(event) => update(index, { relationship: event.target.value })}>
-                <option value="spouse">Spouse</option>
-                <option value="parent">Parent</option>
-                <option value="child">Child</option>
-                <option value="sibling">Sibling</option>
-                <option value="other_adult">Another adult</option>
-                <option value="other">Other</option>
-              </select>
-              <label htmlFor={`authority-${person.clientKey}`}>Caregiver access</label>
-              <select
-                id={`authority-${person.clientKey}`}
-                value={person.authorityCategory}
-                onChange={(event) => update(index, { authorityCategory: event.target.value as Authority })}
-              >
-                <option value="adult_invitation">Another adult, pending their acceptance</option>
-                <option value="minor_representative">Minor, representative authority pending review</option>
-                <option value="dependent_adult_representative">Dependent adult, representative authority pending review</option>
-              </select>
-              {person.authorityCategory === "adult_invitation" ? (
-                <TextField id={`email-${person.clientKey}`} label="Their email" type="email" value={person.invitedEmail ?? ""} error={errors[`patients.${index}.invitedEmail`]} onChange={(invitedEmail) => update(index, { invitedEmail })} />
-              ) : (
-                <p className="muted">Representative authority stays pending. CareUnfold does not decide guardianship.</p>
-              )}
-              <fieldset className="stack">
-                <legend>Caregiver permissions</legend>
-                <p className="muted">
-                  {person.authorityCategory === "adult_invitation"
-                    ? "These permissions are requested. They stay inactive until the adult accepts."
-                    : "These permissions are claimed. They stay inactive until a policy authorizes this relationship."}
-                </p>
-                <div className="permission-list">
-                  {CAREGIVER_PERMISSIONS.map((permission) => {
-                    const checked = (person.requestedScopes ?? DEFAULT_SHARED_SCOPES).includes(permission.scope);
-                    return (
-                      <label key={permission.scope} htmlFor={`${person.clientKey}-${permission.scope}`}>
-                        <input
-                          id={`${person.clientKey}-${permission.scope}`}
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(event) => {
-                            const current = new Set(person.requestedScopes ?? DEFAULT_SHARED_SCOPES);
-                            if (event.target.checked) current.add(permission.scope);
-                            else current.delete(permission.scope);
-                            update(index, { requestedScopes: Array.from(current) as Scope[] });
-                          }}
-                        />
-                        <span>
-                          <strong>{permission.label}</strong>
-                          <span className="muted"> {permission.detail}</span>
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            </>
-          ) : (
-            <p className="muted">Your own profile has full access to records that belong to you.</p>
-          )}
-          <div className="actions">
-            {person.invitation && (person.invitation.status === "draft" || person.invitation.status === "send_failed") ? (
-              <button
-                className="secondary"
-                type="button"
-                onClick={async () => {
-                  const sent = await api<{ delivery?: string }>(`/api/invitations/${person.invitation?.id}/send`, { method: "POST" });
-                  if (!sent.ok) {
-                    setNotice(sent.data.error.message);
-                    return;
-                  }
-                  setNotice(sent.data.delivery === "dev-sink"
-                    ? "The invitation is in the local development outbox. It was not delivered to an inbox."
-                    : sent.data.delivery === "unconfigured"
-                      ? "Email delivery is not configured, so the invitation was not sent."
-                      : "The invitation was handed to email delivery. Access stays pending until they accept.");
-                  router.refresh();
-                }}
-              >
-                Send invitation
-              </button>
-            ) : null}
-            {person.id && person.authorityCategory !== "self" ? (
-              <button
-                className="danger"
-                type="button"
-                onClick={async () => {
-                  const removed = await api(`/api/patients/${person.id}/remove`, { method: "POST" });
-                  if (!removed.ok) {
-                    setNotice(removed.data.error.message);
-                    return;
-                  }
-                  setPeople((current) => current.filter((item) => item.clientKey !== person.clientKey));
-                  router.refresh();
-                }}
-              >
-                Remove pending profile
-              </button>
-            ) : null}
-          </div>
-        </section>
-      ))}
-      <button
-        className="secondary"
-        type="button"
-        onClick={() => setPeople((current) => [...current, emptyPerson("adult_invitation")])}
-      >
-        Add a person
-      </button>
+      <RelationshipGraph
+        displayName={onboarding.displayName}
+        organizing={organizing}
+        people={people}
+        selectedKey={selected?.clientKey}
+        editable
+        onSelect={setSelectedKey}
+        onRelationshipChange={(clientKey, relationship) => {
+          setPeople((current) => current.map((person) => (person.clientKey === clientKey ? { ...person, relationship } : person)));
+        }}
+        onRemove={removePerson}
+        onAdd={addPerson}
+      />
+      {selected ? (
+        <PersonEditor
+          person={selected}
+          index={selectedIndex}
+          errors={errors}
+          onChange={(patch) => update(selectedIndex, patch)}
+          onRemove={() => removePerson(selected)}
+          onSendInvitation={async () => {
+            const sent = await api<{ delivery?: string }>(`/api/invitations/${selected.invitation?.id}/send`, { method: "POST" });
+            if (!sent.ok) {
+              setNotice(sent.data.error.message);
+              return;
+            }
+            setNotice(sent.data.delivery === "dev-sink"
+              ? "The invitation is in the local development outbox. It was not delivered to an inbox."
+              : sent.data.delivery === "unconfigured"
+                ? "Email delivery is not configured, so the invitation was not sent."
+                : "The invitation was handed to email delivery. Access stays pending until they accept.");
+            router.refresh();
+          }}
+        />
+      ) : (
+        <p className="muted">Add a person on the graph to edit their details.</p>
+      )}
       {formError ? <p className="form-error" role="alert">Error: {formError}</p> : null}
       {notice ? <Notice tone="info" title="Invitation status">{notice}</Notice> : null}
       <div className="actions">
-        <button className="primary" type="submit" disabled={pending}>{pending ? "Saving" : "Save and continue"}</button>
+        <button className="primary" type="submit" disabled={pending}>{pending ? "Saving" : saveLabel}</button>
+        {onCancel ? <button className="secondary" type="button" onClick={onCancel}>Cancel</button> : null}
       </div>
     </form>
   );
@@ -441,11 +411,36 @@ export function ReviewForm({ onboarding }: { onboarding: Onboarding }) {
   const router = useRouter();
   const key = useRef(crypto.randomUUID());
   const [error, setError] = useState("");
+  const [editingFamily, setEditingFamily] = useState(false);
+  const [household, setHousehold] = useState(onboarding);
+
+  if (editingFamily) {
+    return (
+      <div className="stack">
+        <p className="muted">Change people or relationships on the graph, then save to return here before you confirm.</p>
+        <FamilyForm
+          onboarding={household}
+          onSaved={(next) => {
+            setHousehold(next);
+            setEditingFamily(false);
+            router.refresh();
+          }}
+          onCancel={() => setEditingFamily(false)}
+          saveLabel="Save changes"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="stack">
-      <RelationshipGraph displayName={onboarding.displayName} organizing={onboarding.organizingFor ?? "self"} people={onboarding.patients} />
+      <RelationshipGraph displayName={household.displayName} organizing={household.organizingFor ?? "self"} people={household.patients} />
+      <div className="actions">
+        <button className="secondary" type="button" onClick={() => setEditingFamily(true)}>Edit people and relationships</button>
+        <Link className="secondary" href="/onboarding/coverage">Edit coverage</Link>
+      </div>
       <ul className="list">
-        {onboarding.patients.map((person) => (
+        {household.patients.map((person) => (
           <li className="card stack" key={person.clientKey}>
             <strong>{person.givenName} {person.familyName}</strong>
             <div className="muted">{relationshipLabel(person.relationship)} · born {person.birthDate}</div>
@@ -457,9 +452,9 @@ export function ReviewForm({ onboarding }: { onboarding: Onboarding }) {
           </li>
         ))}
       </ul>
-      {onboarding.coverage.length === 0 ? <p className="muted">No coverage records saved.</p> : null}
+      {household.coverage.length === 0 ? <p className="muted">No coverage records saved.</p> : null}
       <ul className="list">
-        {onboarding.coverage.map((record) => (
+        {household.coverage.map((record) => (
           <li className="card stack" key={record.clientKey}>
             <strong>{record.insurer || "Insurer unknown"}</strong>
             <div>{record.planName || "Plan name unknown"}</div>
@@ -492,42 +487,202 @@ function RelationshipGraph({
   displayName,
   organizing,
   people,
+  selectedKey,
+  editable = false,
+  onSelect,
+  onRelationshipChange,
+  onRemove,
+  onAdd,
 }: {
   displayName: string | null;
   organizing: Organizing;
   people: PatientDraft[];
+  selectedKey?: string;
+  editable?: boolean;
+  onSelect?: (clientKey: string) => void;
+  onRelationshipChange?: (clientKey: string, relationship: string) => void;
+  onRemove?: (person: PatientDraft) => void;
+  onAdd?: () => void;
 }) {
   const holder = people.find((person) => person.authorityCategory === "self");
   const others = people.filter((person) => person.authorityCategory !== "self");
   const holderName = holder
     ? [holder.givenName, holder.familyName].filter(Boolean).join(" ") || "Primary account holder"
     : displayName || "Primary account holder";
+  const holderSelected = Boolean(holder && selectedKey === holder.clientKey);
   return (
     <section className="card stack graph" aria-label="Family relationship graph">
       <p className="eyebrow">Relationship graph</p>
-      <div className="graph-node graph-node-primary">
-        <p className="eyebrow">Primary account holder</p>
-        <strong>{holderName}</strong>
-        {holder ? (
-          <p className="muted">Patient profile · born {holder.birthDate || "date not entered"}</p>
+      {editable ? <p className="muted">Select a person to edit their details. Relationship can be changed on each connected person.</p> : null}
+      <div className={`graph-node graph-node-primary${holderSelected ? " graph-node-selected" : ""}`}>
+        {holder && onSelect ? (
+          <button className="ghost graph-select" type="button" aria-pressed={holderSelected} onClick={() => onSelect(holder.clientKey)}>
+            <span className="eyebrow">Primary account holder</span>
+            <strong>{holderName}</strong>
+            <span className="muted">Patient profile · born {holder.birthDate || "date not entered"}</span>
+          </button>
         ) : (
-          <p className="muted">{organizing === "someone_else" ? "Caregiver only. No patient profile for this account." : "Save a self profile to place the account holder on the graph."}</p>
+          <>
+            <p className="eyebrow">Primary account holder</p>
+            <strong>{holderName}</strong>
+            {holder ? (
+              <p className="muted">Patient profile · born {holder.birthDate || "date not entered"}</p>
+            ) : (
+              <p className="muted">{organizing === "someone_else" ? "Caregiver only. No patient profile for this account." : "Save a self profile to place the account holder on the graph."}</p>
+            )}
+          </>
         )}
       </div>
       {others.length > 0 ? (
         <ul className="graph-edges">
-          {others.map((person) => (
-            <li key={person.clientKey}>
-              <p className="eyebrow">{relationshipLabel(person.relationship)}</p>
-              <strong>{[person.givenName, person.familyName].filter(Boolean).join(" ") || "Person not named yet"}</strong>
-              <p className="muted">Born {person.birthDate || "date not entered"}</p>
-              <p className="muted">{permissionSummary(person)}</p>
-            </li>
-          ))}
+          {others.map((person) => {
+            const selected = selectedKey === person.clientKey;
+            return (
+              <li className={selected ? "graph-node-selected" : undefined} key={person.clientKey}>
+                {onSelect ? (
+                  <button className="ghost graph-select" type="button" aria-pressed={selected} onClick={() => onSelect(person.clientKey)}>
+                    <span className="eyebrow">{relationshipLabel(person.relationship)}</span>
+                    <strong>{[person.givenName, person.familyName].filter(Boolean).join(" ") || "Person not named yet"}</strong>
+                    <span className="muted">Born {person.birthDate || "date not entered"}</span>
+                    <span className="muted">{permissionSummary(person)}</span>
+                  </button>
+                ) : (
+                  <>
+                    <p className="eyebrow">{relationshipLabel(person.relationship)}</p>
+                    <strong>{[person.givenName, person.familyName].filter(Boolean).join(" ") || "Person not named yet"}</strong>
+                    <p className="muted">Born {person.birthDate || "date not entered"}</p>
+                    <p className="muted">{permissionSummary(person)}</p>
+                  </>
+                )}
+                {editable ? (
+                  <div className="graph-node-edit">
+                    <label htmlFor={`graph-relationship-${person.clientKey}`}>Relationship</label>
+                    <select
+                      id={`graph-relationship-${person.clientKey}`}
+                      value={person.relationship}
+                      onChange={(event) => onRelationshipChange?.(person.clientKey, event.target.value)}
+                    >
+                      {RELATIONSHIPS.map((item) => (
+                        <option key={item.value} value={item.value}>{item.label}</option>
+                      ))}
+                    </select>
+                    {onRemove ? (
+                      <button className="danger" type="button" onClick={() => onRemove(person)}>
+                        {person.id ? "Remove pending profile" : "Remove from graph"}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="muted">Add a person to show a relationship from the primary account holder.</p>
       )}
+      {editable && onAdd ? (
+        <button className="secondary" type="button" onClick={onAdd}>Add a person</button>
+      ) : null}
+    </section>
+  );
+}
+
+function PersonEditor({
+  person,
+  index,
+  errors,
+  onChange,
+  onRemove,
+  onSendInvitation,
+}: {
+  person: PatientDraft;
+  index: number;
+  errors: Record<string, string>;
+  onChange: (patch: Partial<PatientDraft>) => void;
+  onRemove: () => void;
+  onSendInvitation: () => void;
+}) {
+  return (
+    <section className="card stack" key={person.clientKey}>
+      <h2>{person.authorityCategory === "self" ? "Primary account holder" : relationshipLabel(person.relationship)}</h2>
+      {person.status ? <Notice tone={person.status.code === "active" ? "active" : "pending"} title={person.status.label}>{person.status.detail}</Notice> : null}
+      <div className="person-grid">
+        <TextField id={`given-${person.clientKey}`} label="Given name" required value={person.givenName} error={errors[`patients.${index}.givenName`]} onChange={(givenName) => onChange({ givenName })} />
+        <TextField id={`family-${person.clientKey}`} label="Family name" required value={person.familyName} error={errors[`patients.${index}.familyName`]} onChange={(familyName) => onChange({ familyName })} />
+        <TextField id={`preferred-${person.clientKey}`} label="Preferred name (optional)" value={person.preferredName ?? ""} onChange={(preferredName) => onChange({ preferredName })} />
+        <TextField id={`birth-${person.clientKey}`} label="Birth date" type="date" required value={person.birthDate} error={errors[`patients.${index}.birthDate`]} onChange={(birthDate) => onChange({ birthDate })} />
+      </div>
+      {person.authorityCategory !== "self" ? (
+        <>
+          <label htmlFor={`relationship-${person.clientKey}`}>Relationship to the primary account holder</label>
+          <select id={`relationship-${person.clientKey}`} value={person.relationship} onChange={(event) => onChange({ relationship: event.target.value })}>
+            {RELATIONSHIPS.map((item) => (
+              <option key={item.value} value={item.value}>{item.label}</option>
+            ))}
+          </select>
+          <label htmlFor={`authority-${person.clientKey}`}>Caregiver access</label>
+          <select
+            id={`authority-${person.clientKey}`}
+            value={person.authorityCategory}
+            disabled={Boolean(person.id)}
+            onChange={(event) => onChange({ authorityCategory: event.target.value as Authority })}
+          >
+            <option value="adult_invitation">Another adult, pending their acceptance</option>
+            <option value="minor_representative">Minor, representative authority pending review</option>
+            <option value="dependent_adult_representative">Dependent adult, representative authority pending review</option>
+          </select>
+          {person.id ? <p className="muted">A saved person's access type cannot be changed. Remove the pending profile and add it again.</p> : null}
+          {person.authorityCategory === "adult_invitation" ? (
+            <TextField id={`email-${person.clientKey}`} label="Their email" type="email" value={person.invitedEmail ?? ""} error={errors[`patients.${index}.invitedEmail`]} onChange={(invitedEmail) => onChange({ invitedEmail })} />
+          ) : (
+            <p className="muted">Representative authority stays pending. CareUnfold does not decide guardianship.</p>
+          )}
+          <fieldset className="stack">
+            <legend>Caregiver permissions</legend>
+            <p className="muted">
+              {person.authorityCategory === "adult_invitation"
+                ? "These permissions are requested. They stay inactive until the adult accepts."
+                : "These permissions are claimed. They stay inactive until a policy authorizes this relationship."}
+            </p>
+            <div className="permission-list">
+              {CAREGIVER_PERMISSIONS.map((permission) => {
+                const checked = (person.requestedScopes ?? DEFAULT_SHARED_SCOPES).includes(permission.scope);
+                return (
+                  <label key={permission.scope} htmlFor={`${person.clientKey}-${permission.scope}`}>
+                    <input
+                      id={`${person.clientKey}-${permission.scope}`}
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(event) => {
+                        const current = new Set(person.requestedScopes ?? DEFAULT_SHARED_SCOPES);
+                        if (event.target.checked) current.add(permission.scope);
+                        else current.delete(permission.scope);
+                        onChange({ requestedScopes: Array.from(current) as Scope[] });
+                      }}
+                    />
+                    <span>
+                      <strong>{permission.label}</strong>
+                      <span className="muted"> {permission.detail}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        </>
+      ) : (
+        <p className="muted">Your own profile has full access to records that belong to you.</p>
+      )}
+      <div className="actions">
+        {person.invitation && (person.invitation.status === "draft" || person.invitation.status === "send_failed") ? (
+          <button className="secondary" type="button" onClick={onSendInvitation}>Send invitation</button>
+        ) : null}
+        {person.authorityCategory !== "self" ? (
+          <button className="danger" type="button" onClick={onRemove}>
+            {person.id ? "Remove pending profile" : "Remove from graph"}
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -637,6 +792,20 @@ function emptyPerson(authority: Authority): PatientDraft {
   };
 }
 
+function familyContinueTo(step?: Onboarding["currentStep"]) {
+  if (step === "review") return "/onboarding/review";
+  if (step === "complete") return "/app/family";
+  return "/onboarding/coverage";
+}
+
+function firstPatientErrorIndex(fields: Record<string, string>) {
+  for (const key of Object.keys(fields)) {
+    const match = key.match(/^patients\.(\d+)\./);
+    if (match) return Number(match[1]);
+  }
+  return null;
+}
+
 function emptyCoverage(): CoverageDraft {
   return {
     clientKey: crypto.randomUUID(),
@@ -679,22 +848,8 @@ function updateRecord(setRecords: React.Dispatch<React.SetStateAction<CoverageDr
 }
 
 function relationshipLabel(value: string) {
-  switch (value) {
-    case "self":
-      return "Self";
-    case "spouse":
-      return "Spouse";
-    case "parent":
-      return "Parent";
-    case "child":
-      return "Child";
-    case "sibling":
-      return "Sibling";
-    case "other_adult":
-      return "Another adult";
-    default:
-      return "Related";
-  }
+  if (value === "self") return "Self";
+  return RELATIONSHIPS.find((item) => item.value === value)?.label ?? "Related";
 }
 
 function permissionLabel(scope: string) {

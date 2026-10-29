@@ -621,6 +621,45 @@ button:disabled,
   gap: 8px;
 }
 
+.graph-node-selected {
+  box-shadow: 0 0 0 1.5px var(--color-accent);
+}
+
+.graph-edges li.graph-node-selected {
+  border-color: transparent;
+}
+
+button.ghost.graph-select {
+  display: grid;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  gap: 8px;
+  justify-content: stretch;
+  align-items: start;
+  text-align: inherit;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
+button.ghost.graph-select .muted,
+button.ghost.graph-select .eyebrow {
+  display: block;
+}
+
+.graph-node-primary button.ghost.graph-select {
+  text-align: center;
+  align-items: center;
+}
+
+.graph-node-edit {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--color-hairline);
+}
+
 .permission-list {
   display: grid;
   gap: 10px;

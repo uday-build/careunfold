@@ -11,7 +11,7 @@ export default async function ReviewPage() {
       <section className="stack">
         <p className="eyebrow">Step 4 of 4</p>
         <h1>Review and confirm</h1>
-        <p className="lede">Confirming saves this setup. It does not grant access that is still pending, and it does not contact a provider.</p>
+        <p className="lede">Check the relationship graph, then confirm. You can still edit people and relationships before this last step. Confirming does not grant access that is still pending, and it does not contact a provider.</p>
         <ReviewForm onboarding={onboarding} />
       </section>
     </Shell>

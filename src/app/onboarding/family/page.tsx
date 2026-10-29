@@ -11,7 +11,7 @@ export default async function FamilyStepPage() {
       <section className="stack">
         <p className="eyebrow">Step 2 of 4 · Family</p>
         <h1>People, relationships, and permissions</h1>
-        <p className="lede">Record each person, their birth date, how they relate to the primary account holder, and what a caregiver may see. Saving does not send an invitation.</p>
+        <p className="lede">Record each person on the relationship graph, their birth date, how they relate to the primary account holder, and what a caregiver may see. You can still edit this before the final confirmation. Saving does not send an invitation.</p>
         <FamilyForm onboarding={onboarding} />
       </section>
     </Shell>

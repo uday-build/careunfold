@@ -90,4 +90,55 @@ describe("family onboarding", () => {
       outOfPocketMax: { state: "unknown" },
     });
   });
+
+  it("lets the relationship graph be corrected after coverage and before review", async () => {
+    const created = await register(ctx, "family-edit@example.com");
+    await saveProfile(ctx, created.cookie, "Avery Quinn", "self");
+    const family = await api(ctx, "/api/onboarding/family", {
+      method: "POST",
+      cookie: created.cookie,
+      idempotencyKey: "family-edit-save",
+      body: {
+        patients: [
+          selfPatient("self-edit"),
+          adultPatient("adult-edit", "jordan-edit@example.com", ["profile.read", "coverage.read"]),
+        ],
+      },
+    });
+    expect(family.status).toBe(200);
+    await api(ctx, "/api/onboarding/coverage", {
+      method: "POST",
+      cookie: created.cookie,
+      idempotencyKey: "coverage-edit-skip",
+      body: { skip: true },
+    });
+    const corrected = await api(ctx, "/api/onboarding/family", {
+      method: "POST",
+      cookie: created.cookie,
+      idempotencyKey: "family-edit-correct",
+      body: {
+        patients: [
+          { ...selfPatient("self-edit"), givenName: "Avery", familyName: "Quinn" },
+          {
+            ...adultPatient("adult-edit", "jordan-edit@example.com", ["profile.read", "coverage.read", "records.read"]),
+            givenName: "Jordan",
+            relationship: "sibling",
+          },
+        ],
+      },
+    });
+    expect(corrected.status).toBe(200);
+    expect(corrected.data.onboarding.currentStep).toBe("review");
+    const adult = corrected.data.onboarding.patients.find((person: { authorityCategory: string }) => person.authorityCategory === "adult_invitation");
+    expect(adult.relationship).toBe("sibling");
+    expect(adult.requestedScopes).toEqual(["profile.read", "coverage.read", "records.read"]);
+    const review = await api(ctx, "/api/onboarding/review", {
+      method: "POST",
+      cookie: created.cookie,
+      idempotencyKey: "review-after-edit",
+      body: {},
+    });
+    expect(review.status).toBe(200);
+    expect(review.data.onboarding.currentStep).toBe("complete");
+  });
 });
