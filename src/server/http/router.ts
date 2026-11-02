@@ -8,6 +8,7 @@ import {
   completeReview,
   createPrivacyRequest,
   createVisit,
+  extractVisitDraft,
   decideAccess,
   downloadDocument,
   getVisit,
@@ -165,15 +166,30 @@ async function route(request: Request, ctx: AppContext, path: string, actor: Act
     return json(200, await createPrivacyRequest(ctx, requireActor(actor), await readJson(request)));
   }
 
-  if (request.method === "GET" && path === "/api/cases") {
+  if (request.method === "POST" && path === "/api/visits/extract") {
+    const form = await request.formData();
+    const uploaded = form.get("file");
+    if (!(uploaded instanceof File)) {
+      throw new HttpError(422, "empty_file", "Choose a file to upload.");
+    }
+    return json(
+      200,
+      await extractVisitDraft(ctx, requireActor(actor), {
+        filename: uploaded.name,
+        mimeType: uploaded.type || "application/octet-stream",
+        bytes: new Uint8Array(await uploaded.arrayBuffer()),
+      }),
+    );
+  }
+  if (request.method === "GET" && (path === "/api/visits" || path === "/api/cases")) {
     return json(200, await listVisits(ctx, requireActor(actor)));
   }
-  if (request.method === "POST" && path === "/api/cases") {
+  if (request.method === "POST" && (path === "/api/visits" || path === "/api/cases")) {
     const result = await createVisit(ctx, requireActor(actor), await readJson(request), idempotencyKey(request));
     return json(result.status, result.body);
   }
-  const caseDocuments = path.match(/^\/api\/cases\/([^/]+)\/documents$/);
-  if (caseDocuments && request.method === "POST") {
+  const visitDocuments = path.match(/^\/api\/(?:visits|cases)\/([^/]+)\/documents$/);
+  if (visitDocuments && request.method === "POST") {
     const form = await request.formData();
     const uploaded = form.get("file");
     if (!(uploaded instanceof File)) {
@@ -182,7 +198,7 @@ async function route(request: Request, ctx: AppContext, path: string, actor: Act
     const bytes = new Uint8Array(await uploaded.arrayBuffer());
     return json(
       201,
-      await attachDocument(ctx, requireActor(actor), caseDocuments[1], {
+      await attachDocument(ctx, requireActor(actor), visitDocuments[1], {
         kind: form.get("kind"),
         filename: uploaded.name,
         mimeType: uploaded.type || "application/octet-stream",
@@ -190,9 +206,9 @@ async function route(request: Request, ctx: AppContext, path: string, actor: Act
       }),
     );
   }
-  const caseMatch = path.match(/^\/api\/cases\/([^/]+)$/);
-  if (caseMatch && request.method === "GET") {
-    return json(200, await getVisit(ctx, requireActor(actor), caseMatch[1]));
+  const visitMatch = path.match(/^\/api\/(?:visits|cases)\/([^/]+)$/);
+  if (visitMatch && request.method === "GET") {
+    return json(200, await getVisit(ctx, requireActor(actor), visitMatch[1]));
   }
   const documentMatch = path.match(/^\/api\/documents\/([^/]+)$/);
   if (documentMatch && request.method === "GET") {

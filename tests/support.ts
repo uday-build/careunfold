@@ -45,6 +45,7 @@ export async function resetData(ctx: AppContext) {
       visit_document,
       uploaded_document,
       visit,
+      household_clinician,
       privacy_request,
       dev_email_outbox,
       audit_event,

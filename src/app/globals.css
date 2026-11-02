@@ -321,6 +321,13 @@ h3 {
   border-color: rgba(14, 17, 22, 0.1);
 }
 
+fieldset.card > legend {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  padding: 0 6px;
+}
+
 .notice {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -411,6 +418,11 @@ textarea {
   background: var(--color-surface);
   color: var(--color-primary);
   transition: border-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard);
+}
+
+textarea {
+  min-height: 8rem;
+  resize: vertical;
 }
 
 input:hover,
@@ -573,7 +585,8 @@ button:disabled,
   flex-wrap: wrap;
 }
 
-.choice {
+.choice,
+a.choice {
   flex: 1 1 12rem;
   text-align: left;
   border: var(--border-card);
@@ -584,9 +597,18 @@ button:disabled,
   cursor: pointer;
   min-height: 44px;
   box-shadow: none;
+  text-decoration: none;
+  display: grid;
+  gap: 8px;
+  align-content: start;
 }
 
-.choice[aria-pressed="true"] {
+a.choice:hover {
+  color: var(--color-primary);
+}
+
+.choice[aria-pressed="true"],
+a.choice[aria-current="page"] {
   background: rgba(14, 17, 22, 0.04);
   border: 1.5px solid var(--color-primary);
 }
@@ -596,6 +618,21 @@ button:disabled,
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.intake-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.intake-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 12px;
+  align-items: end;
 }
 
 .graph-node-primary {

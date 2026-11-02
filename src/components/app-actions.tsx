@@ -194,54 +194,7 @@ export function PrivacyCard({ privacyRequests }: { privacyRequests: Array<{ id: 
   );
 }
 
-export function CaseStartForm({ patients }: { patients: Array<{ id: string; givenName: string; familyName: string }> }) {
-  const router = useRouter();
-  const [patientId, setPatientId] = useState(patients[0]?.id ?? "");
-  const [visitDate, setVisitDate] = useState("");
-  const [provider, setProvider] = useState("");
-  const [location, setLocation] = useState("");
-  const [reason, setReason] = useState("");
-  const [message, setMessage] = useState("");
-  const [pending, setPending] = useState(false);
-  return (
-    <form
-      className="stack"
-      onSubmit={async (event) => {
-        event.preventDefault();
-        setPending(true);
-        setMessage("");
-        const result = await api<{ visit: { id: string } }>("/api/cases", {
-          method: "POST",
-          idempotencyKey: crypto.randomUUID(),
-          body: { patientId, visitDate, provider, location, reason },
-        });
-        setPending(false);
-        if (!result.ok) {
-          setMessage(result.data.error.message);
-          return;
-        }
-        router.push(`/app/cases/${result.data.visit.id}`);
-        router.refresh();
-      }}
-    >
-      <label htmlFor="case-patient">Patient</label>
-      <select id="case-patient" value={patientId} onChange={(event) => setPatientId(event.target.value)} required={patients.length > 0}>
-        {patients.length === 0 ? <option value="">No patient profiles yet</option> : null}
-        {patients.map((person) => (
-          <option key={person.id} value={person.id}>{person.givenName} {person.familyName}</option>
-        ))}
-      </select>
-      <TextField id="visitDate" label="Visit date" type="date" value={visitDate} onChange={setVisitDate} required />
-      <TextField id="provider" label="Provider or clinician" value={provider} onChange={setProvider} />
-      <TextField id="location" label="Facility or location" value={location} onChange={setLocation} />
-      <TextField id="reason" label="Reason for the visit" value={reason} onChange={setReason} />
-      {message ? <p role="status">{message}</p> : null}
-      <button className="primary" type="submit" disabled={pending || patients.length === 0}>{pending ? "Saving" : "Save visit details"}</button>
-    </form>
-  );
-}
-
-export function DocumentUploadForm({ caseId, storageConfigured }: { caseId: string; storageConfigured: boolean }) {
+export function DocumentUploadForm({ visitId, storageConfigured }: { visitId: string; storageConfigured: boolean }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
@@ -258,7 +211,7 @@ export function DocumentUploadForm({ caseId, storageConfigured }: { caseId: stri
         setMessage("");
         let response: Response;
         try {
-          response = await fetch(`/api/cases/${caseId}/documents`, {
+          response = await fetch(`/api/visits/${visitId}/documents`, {
             method: "POST",
             body: new FormData(form),
             credentials: "same-origin",

@@ -381,9 +381,15 @@ export const visit = pgTable(
       .notNull()
       .references(() => household.id, { onDelete: "cascade" }),
     visitDate: date("visit_date", { mode: "string" }).notNull(),
+    startTime: text("start_time"),
     provider: text("provider"),
+    providerRole: text("provider_role"),
+    modality: text("modality"),
     location: text("location"),
     reason: text("reason"),
+    chiefComplaint: text("chief_complaint"),
+    allergies: jsonb("allergies").$type<Array<{ substance: string; severity: string }>>().notNull().default([]),
+    medications: jsonb("medications").$type<Array<{ name: string; dosage: string | null; kind: string }>>().notNull().default([]),
     status: text("status").notNull().default("open"),
     createdByUserId: text("created_by_user_id")
       .notNull()
@@ -396,6 +402,22 @@ export const visit = pgTable(
     index("visit_patient_idx").on(table.patientId),
     index("visit_household_idx").on(table.householdId),
   ],
+);
+
+export const householdClinician = pgTable(
+  "household_clinician",
+  {
+    id: uuid("id").primaryKey(),
+    householdId: uuid("household_id")
+      .notNull()
+      .references(() => household.id, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull(),
+    role: text("role").notNull(),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [index("household_clinician_household_idx").on(table.householdId)],
 );
 
 export const uploadedDocument = pgTable(
@@ -478,6 +500,7 @@ export const schema = {
   actionRate,
   jurisdictionPolicy,
   visit,
+  householdClinician,
   uploadedDocument,
   visitDocument,
   userRelations,

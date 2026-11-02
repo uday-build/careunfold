@@ -48,3 +48,24 @@ export function TextField({
     </div>
   );
 }
+
+export function TextArea({
+  id,
+  label,
+  value,
+  onChange,
+  required,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+}) {
+  return (
+    <div className="field">
+      <label htmlFor={id}>{label}{required ? " (required)" : ""}</label>
+      <textarea id={id} name={id} rows={6} value={value} required={required} onChange={(event) => onChange(event.target.value)} />
+    </div>
+  );
+}

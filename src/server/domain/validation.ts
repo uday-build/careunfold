@@ -155,12 +155,67 @@ const optionalNote = z
   .nullable()
   .transform((value) => (value ? value : null));
 
+const optionalLongNote = z
+  .string()
+  .trim()
+  .max(4000)
+  .optional()
+  .nullable()
+  .transform((value) => (value ? value : null));
+
+export const PROVIDER_ROLES = [
+  { value: "physician", label: "Physician" },
+  { value: "nurse", label: "Nurse" },
+  { value: "therapist", label: "Therapist" },
+  { value: "other", label: "Other" },
+] as const;
+
+export const ENCOUNTER_MODALITIES = [
+  { value: "in_person_outpatient", label: "In-person outpatient" },
+  { value: "telehealth_video", label: "Telehealth video" },
+  { value: "phone", label: "Phone consultation" },
+  { value: "home_visit", label: "Home visit" },
+] as const;
+
+export const ALLERGY_SEVERITIES = [
+  { value: "mild", label: "Mild" },
+  { value: "moderate", label: "Moderate" },
+  { value: "anaphylactic", label: "Anaphylactic" },
+] as const;
+
+export const MEDICATION_KINDS = [
+  { value: "prescription", label: "Prescription" },
+  { value: "supplement", label: "Supplement" },
+] as const;
+
+export const allergyRowSchema = z.object({
+  substance: z.string().trim().min(1, "Enter a substance.").max(80, "Use 80 characters or fewer."),
+  severity: z.enum(["mild", "moderate", "anaphylactic"]),
+});
+
+export const medicationRowSchema = z.object({
+  name: z.string().trim().min(1, "Enter a medication or supplement.").max(80, "Use 80 characters or fewer."),
+  dosage: z.string().trim().max(80, "Use 80 characters or fewer.").optional().nullable().transform((value) => (value ? value : null)),
+  kind: z.enum(["prescription", "supplement"]),
+});
+
 export const visitInputSchema = z.object({
   patientId: z.string().trim().min(1),
   visitDate: z.string().trim(),
+  startTime: z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .transform((value) => (value ? value : null)),
   provider: optionalNote,
+  providerRole: z.enum(["physician", "nurse", "therapist", "other"]).optional().nullable(),
+  modality: z.enum(["in_person_outpatient", "telehealth_video", "phone", "home_visit"]).optional().nullable(),
   location: optionalNote,
   reason: optionalNote,
+  chiefComplaint: optionalLongNote,
+  allergies: z.array(allergyRowSchema).max(40).optional().default([]),
+  medications: z.array(medicationRowSchema).max(40).optional().default([]),
 });
 
 export const documentKindSchema = z.enum(["bill", "eob", "receipt", "other"]);
@@ -198,6 +253,10 @@ export function assertRealDate(value: string, field: string, options?: { notFutu
     }
   }
   return value;
+}
+
+export function isRealTime(value: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
 export function isRealDate(value: string): boolean {

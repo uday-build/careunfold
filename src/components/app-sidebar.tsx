@@ -10,9 +10,9 @@ const items = [
     detail: "Setup and relationship graph",
   },
   {
-    href: "/app/cases",
-    label: "Cases",
-    detail: "Each case starts with a visit",
+    href: "/app/visits",
+    label: "Visits",
+    detail: "Previous visits and new ones",
   },
   {
     href: "/app/billing",

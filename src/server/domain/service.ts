@@ -12,6 +12,7 @@ import {
   coveragePatient,
   coverageVersion,
   household,
+  householdClinician,
   householdMembership,
   idempotencyKey,
   invitation,
@@ -30,6 +31,7 @@ import {
   VISIT_DOCUMENT_BUCKET,
   type FileStore,
 } from "../storage/files";
+import { extractVisitWithGateway, type ExtractedVisitFields, type VisitExtractRequest } from "../ai/extract-visit";
 import type { AppEnv } from "../env";
 import { HttpError } from "../http/errors";
 import type { Auth } from "../auth/create-auth";
@@ -51,6 +53,8 @@ import {
   coverageSaveSchema,
   documentKindSchema,
   familyInputSchema,
+  isRealDate,
+  isRealTime,
   isUuid,
   memberAddSchema,
   memberRemoveSchema,
@@ -71,6 +75,7 @@ export type AppContext = {
   env: AppEnv;
   storage: FileStore;
   now: () => Date;
+  extractVisit?: (input: VisitExtractRequest) => Promise<ExtractedVisitFields>;
 };
 
 type CommandResult = { status: number; body: Record<string, unknown> };
@@ -453,27 +458,43 @@ export async function createVisit(ctx: AppContext, actor: Actor, raw: unknown, i
   requireApproved(actor);
   const input = parseInput(visitInputSchema, raw);
   assertRealDate(input.visitDate, "visitDate");
+  if (input.startTime && !isRealTime(input.startTime)) {
+    throw new HttpError(422, "invalid_fields", "Check the highlighted fields.", {
+      startTime: "Enter a start time as hours and minutes, such as 14:30.",
+    });
+  }
   if (!isUuid(input.patientId)) throw new HttpError(404, "not_found", "That record was not found.");
   return withIdempotency(ctx, actor.id, "visit.create", idempotencyKeyValue, raw, async (tx) => {
     const decision = await decidePatientAccess(tx, actor, input.patientId, "records.write", ctx.now());
     if (!decision.allowed) throw new HttpError(decision.status, decision.code, decision.message);
     const [person] = await tx.select().from(patient).where(eq(patient.id, input.patientId)).limit(1);
     if (!person) throw new HttpError(404, "not_found", "That record was not found.");
+    const chiefComplaint = input.chiefComplaint ?? input.reason;
+    const reason = input.reason ?? (chiefComplaint ? chiefComplaint.slice(0, 200) : null);
     const id = randomUUID();
     await tx.insert(visit).values({
       id,
       patientId: person.id,
       householdId: person.householdId,
       visitDate: input.visitDate,
+      startTime: input.startTime,
       provider: input.provider,
+      providerRole: input.providerRole ?? null,
+      modality: input.modality ?? null,
       location: input.location,
-      reason: input.reason,
+      reason,
+      chiefComplaint,
+      allergies: input.allergies,
+      medications: input.medications,
       status: "open",
       createdByUserId: actor.id,
       version: 1,
       createdAt: ctx.now(),
       updatedAt: ctx.now(),
     });
+    if (input.provider) {
+      await upsertHouseholdClinician(tx, person.householdId, input.provider, input.providerRole ?? "other", ctx.now());
+    }
     await writeAudit(tx, ctx.now(), {
       actorUserId: actor.id,
       householdId: person.householdId,
@@ -486,11 +507,43 @@ export async function createVisit(ctx: AppContext, actor: Actor, raw: unknown, i
   });
 }
 
+export async function extractVisitDraft(
+  ctx: AppContext,
+  actor: Actor,
+  input: { filename: string; mimeType: string; bytes: Uint8Array },
+) {
+  requireApproved(actor);
+  const mimeType = inferMimeType(input.filename, input.mimeType);
+  if (!ALLOWED_DOCUMENT_TYPES[mimeType]) {
+    throw new HttpError(422, "unsupported_type", "Upload a PDF, JPEG, PNG, or WebP file.");
+  }
+  if (input.bytes.byteLength === 0) {
+    throw new HttpError(422, "empty_file", "Choose a file to upload.");
+  }
+  if (input.bytes.byteLength > MAX_UPLOAD_BYTES) {
+    throw new HttpError(422, "file_too_large", "Use a file of 4 MB or smaller.");
+  }
+  const writable = await readablePatientIds(ctx, actor, "records.write");
+  const people = await patientsById(ctx.db, writable);
+  const patients = Array.from(people.values());
+  if (patients.length === 0) {
+    throw new HttpError(403, "grant_required", "Save a patient profile you can write before adding a visit.");
+  }
+  const extractor = ctx.extractVisit ?? extractVisitWithGateway;
+  const extracted = await extractor({
+    filename: safeFilename(input.filename),
+    mimeType,
+    bytes: input.bytes,
+    patients,
+  });
+  return { ok: true, draft: visitDraftFromExtraction(extracted, patients), persisted: false };
+}
+
 export async function getVisit(ctx: AppContext, actor: Actor, visitId: string) {
   requireApproved(actor);
-  if (!isUuid(visitId)) throw new HttpError(404, "not_found", "That case was not found.");
+  if (!isUuid(visitId)) throw new HttpError(404, "not_found", "That visit was not found.");
   const [row] = await ctx.db.select().from(visit).where(eq(visit.id, visitId)).limit(1);
-  if (!row) throw new HttpError(404, "not_found", "That case was not found.");
+  if (!row) throw new HttpError(404, "not_found", "That visit was not found.");
   const decision = await decidePatientAccess(ctx.db, actor, row.patientId, "records.read", ctx.now());
   if (!decision.allowed) throw new HttpError(decision.status, decision.code, decision.message);
   const [person] = await ctx.db.select().from(patient).where(eq(patient.id, row.patientId)).limit(1);
@@ -517,10 +570,10 @@ export async function attachDocument(
   input: { kind: unknown; filename: string; mimeType: string; bytes: Uint8Array },
 ) {
   requireApproved(actor);
-  if (!isUuid(visitId)) throw new HttpError(404, "not_found", "That case was not found.");
+  if (!isUuid(visitId)) throw new HttpError(404, "not_found", "That visit was not found.");
   const kind = parseInput(documentKindSchema, input.kind);
   const [row] = await ctx.db.select().from(visit).where(eq(visit.id, visitId)).limit(1);
-  if (!row) throw new HttpError(404, "not_found", "That case was not found.");
+  if (!row) throw new HttpError(404, "not_found", "That visit was not found.");
   const decision = await decidePatientAccess(ctx.db, actor, row.patientId, "records.write", ctx.now());
   if (!decision.allowed) throw new HttpError(decision.status, decision.code, decision.message);
   if (!ctx.storage.available) {
@@ -1602,6 +1655,7 @@ async function householdAdminView(db: Database, actor: Actor, householdId: strin
     members: memberViews,
     patients: await loadPatientViews(db, actor, householdId, new Date()),
     coverage: await loadCoverageViews(db, householdId, adminRole === "owner" || adminRole === "admin"),
+    clinicians: await loadHouseholdClinicians(db, householdId),
   };
 }
 
@@ -1779,14 +1833,72 @@ function canonicalJson(value: unknown): string {
   return JSON.stringify(value);
 }
 
+function visitDraftFromExtraction(
+  extracted: ExtractedVisitFields,
+  patients: Array<{ id: string; givenName: string; familyName: string }>,
+) {
+  const warnings: string[] = [];
+  const matched = matchPatient(extracted.patientName, patients);
+  if (matched.warning) warnings.push(matched.warning);
+  const visitDate = extracted.visitDate && isRealDate(extracted.visitDate) ? extracted.visitDate : "";
+  if (extracted.visitDate && !visitDate) warnings.push("A visit date was read but it was not a real calendar date.");
+  if (!visitDate) warnings.push("No visit date was read. Enter the date before saving.");
+  const startTime = extracted.startTime && isRealTime(extracted.startTime) ? extracted.startTime : "";
+  if (extracted.startTime && !startTime) warnings.push("A start time was read but it was not a valid time.");
+  const chiefComplaint = extracted.chiefComplaint ?? extracted.reason ?? "";
+  return {
+    patientId: matched.patientId,
+    visitDate,
+    startTime,
+    provider: extracted.provider ?? "",
+    providerRole: extracted.providerRole ?? "",
+    modality: extracted.modality ?? "",
+    location: extracted.location ?? "",
+    reason: extracted.reason ?? "",
+    chiefComplaint,
+    allergies: extracted.allergies ?? [],
+    medications: extracted.medications ?? [],
+    warnings,
+  };
+}
+
+function matchPatient(
+  name: string | null,
+  patients: Array<{ id: string; givenName: string; familyName: string }>,
+) {
+  const fallback = patients[0]?.id ?? "";
+  if (!name) {
+    return { patientId: fallback, warning: "No patient name was read. Confirm who this visit is for." };
+  }
+  const needle = normalizePersonName(name);
+  const found = patients.find((person) => {
+    const full = normalizePersonName(`${person.givenName} ${person.familyName}`);
+    return full === needle || full.includes(needle) || needle.includes(full);
+  });
+  if (!found) {
+    return { patientId: fallback, warning: `The document named "${name}". Confirm who this visit is for.` };
+  }
+  return { patientId: found.id, warning: null as string | null };
+}
+
+function normalizePersonName(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 function visitSummary(
   row: {
     id: string;
     patientId: string;
     visitDate: string;
+    startTime?: string | null;
     provider: string | null;
+    providerRole?: string | null;
+    modality?: string | null;
     location: string | null;
     reason: string | null;
+    chiefComplaint?: string | null;
+    allergies?: Array<{ substance: string; severity: string }>;
+    medications?: Array<{ name: string; dosage: string | null; kind: string }>;
     status: string;
   },
   person?: { givenName: string; familyName: string } | null,
@@ -1795,12 +1907,58 @@ function visitSummary(
     id: row.id,
     patientId: row.patientId,
     visitDate: row.visitDate,
+    startTime: row.startTime ?? null,
     provider: row.provider,
+    providerRole: row.providerRole ?? null,
+    modality: row.modality ?? null,
     location: row.location,
     reason: row.reason,
+    chiefComplaint: row.chiefComplaint ?? row.reason,
+    allergies: row.allergies ?? [],
+    medications: row.medications ?? [],
     status: row.status,
     patientName: person ? `${person.givenName} ${person.familyName}` : "Patient",
   };
+}
+
+async function loadHouseholdClinicians(db: Database, householdId: string) {
+  const rows = await db
+    .select()
+    .from(householdClinician)
+    .where(and(eq(householdClinician.householdId, householdId), eq(householdClinician.active, true)))
+    .orderBy(householdClinician.displayName);
+  return rows.map((row) => ({
+    id: row.id,
+    displayName: row.displayName,
+    role: row.role,
+  }));
+}
+
+async function upsertHouseholdClinician(
+  tx: Database,
+  householdId: string,
+  displayName: string,
+  role: string,
+  now: Date,
+) {
+  const rows = await tx.select().from(householdClinician).where(eq(householdClinician.householdId, householdId));
+  const existing = rows.find((row) => row.displayName.toLowerCase() === displayName.toLowerCase());
+  if (existing) {
+    await tx
+      .update(householdClinician)
+      .set({ role, active: true, updatedAt: now })
+      .where(eq(householdClinician.id, existing.id));
+    return;
+  }
+  await tx.insert(householdClinician).values({
+    id: randomUUID(),
+    householdId,
+    displayName,
+    role,
+    active: true,
+    createdAt: now,
+    updatedAt: now,
+  });
 }
 
 function documentSummary(file: {
