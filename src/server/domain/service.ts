@@ -530,11 +530,16 @@ export async function extractVisitDraft(
     throw new HttpError(403, "grant_required", "Save a patient profile you can write before adding a visit.");
   }
   const extractor = ctx.extractVisit ?? extractVisitWithGateway;
+  const householdIds = [...new Set(patients.map((person) => person.householdId).filter(Boolean))];
+  const clinicians = (
+    await Promise.all(householdIds.map((householdId) => loadHouseholdClinicians(ctx.db, householdId)))
+  ).flat();
   const extracted = await extractor({
     filename: safeFilename(input.filename),
     mimeType,
     bytes: input.bytes,
-    patients,
+    patients: patients.map((person) => ({ id: person.id, givenName: person.givenName, familyName: person.familyName })),
+    clinicians: clinicians.map((person) => ({ displayName: person.displayName, role: person.role })),
   });
   return { ok: true, draft: visitDraftFromExtraction(extracted, patients), persisted: false };
 }
@@ -1875,6 +1880,7 @@ function visitDraftFromExtraction(
   if (!visitDate) warnings.push("No visit date was read. Enter the date before saving.");
   const startTime = extracted.startTime && isRealTime(extracted.startTime) ? extracted.startTime : "";
   if (extracted.startTime && !startTime) warnings.push("A start time was read but it was not a valid time.");
+  if (!startTime) warnings.push("No start time was read. Enter the time before saving.");
   const chiefComplaint = extracted.chiefComplaint ?? extracted.reason ?? "";
   return {
     patientId: matched.patientId,
@@ -2022,7 +2028,7 @@ async function readablePatientIds(ctx: AppContext, actor: Actor, scope: Scope) {
 
 async function patientsById(db: Database, ids: string[]) {
   const unique = [...new Set(ids)];
-  const map = new Map<string, { id: string; givenName: string; familyName: string }>();
+  const map = new Map<string, { id: string; householdId: string; givenName: string; familyName: string }>();
   if (unique.length === 0) return map;
   const rows = await db.select().from(patient).where(inArray(patient.id, unique));
   for (const row of rows) map.set(row.id, row);

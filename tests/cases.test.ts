@@ -201,19 +201,23 @@ describe("visits and documents", () => {
 
   it("drafts visit fields from a document without saving a visit", async () => {
     const account = await completeSelf("visits-extract@example.com");
-    ctx.extractVisit = async () => ({
-      patientName: "Avery Quinn",
-      visitDate: "2026-10-02",
-      startTime: "14:30",
-      provider: "Harbor Clinic",
-      providerRole: "physician",
-      modality: "in_person_outpatient",
-      location: "Oakland",
-      reason: "Annual",
-      chiefComplaint: "Annual visit",
-      allergies: [{ substance: "Latex", severity: "mild" }],
-      medications: [{ name: "Lisinopril", dosage: "10 mg", kind: "prescription" }],
-    });
+    let seenPatients: string[] = [];
+    ctx.extractVisit = async (input) => {
+      seenPatients = input.patients.map((person) => `${person.givenName} ${person.familyName}`);
+      return {
+        patientName: "Avery Quinn",
+        visitDate: "2026-10-02",
+        startTime: "14:30",
+        provider: "Harbor Clinic",
+        providerRole: "physician",
+        modality: "in_person_outpatient",
+        location: "Oakland",
+        reason: "Annual",
+        chiefComplaint: "I've had a persistent cough for two weeks.",
+        allergies: [{ substance: "Latex", severity: "mild" }],
+        medications: [{ name: "Lisinopril", dosage: "10 mg", kind: "prescription" }],
+      };
+    };
     const form = new FormData();
     form.set("file", new File([new Uint8Array([37, 80, 68, 70, 45, 49, 46, 52])], "harbor-bill.pdf", { type: "application/pdf" }));
     const extracted = await dispatch(
@@ -227,14 +231,51 @@ describe("visits and documents", () => {
     expect(extracted.status).toBe(200);
     const body = await extracted.json();
     expect(body.persisted).toBe(false);
+    expect(seenPatients).toContain("Avery Quinn");
     expect(body.draft.visitDate).toBe("2026-10-02");
     expect(body.draft.startTime).toBe("14:30");
     expect(body.draft.provider).toBe("Harbor Clinic");
-    expect(body.draft.chiefComplaint).toBe("Annual visit");
+    expect(body.draft.providerRole).toBe("physician");
+    expect(body.draft.modality).toBe("in_person_outpatient");
+    expect(body.draft.chiefComplaint).toBe("I've had a persistent cough for two weeks.");
     expect(body.draft.allergies).toEqual([{ substance: "Latex", severity: "mild" }]);
+    expect(body.draft.medications).toEqual([{ name: "Lisinopril", dosage: "10 mg", kind: "prescription" }]);
     expect(body.draft.patientId).toBe(account.patientId);
     const listed = await api(ctx, "/api/visits", { cookie: account.cookie });
     expect(listed.data.visits).toEqual([]);
+    ctx.extractVisit = undefined;
+  });
+
+  it("asks the user to fill a missing start time after extraction", async () => {
+    const account = await completeSelf("visits-extract-time@example.com");
+    ctx.extractVisit = async () => ({
+      patientName: "Avery Quinn",
+      visitDate: "2026-10-02",
+      startTime: null,
+      provider: "Dr. Elena Park",
+      providerRole: "physician",
+      modality: "telehealth_video",
+      location: null,
+      reason: null,
+      chiefComplaint: "Follow-up",
+      allergies: [],
+      medications: [],
+    });
+    const form = new FormData();
+    form.set("file", new File([new Uint8Array([37, 80, 68, 70])], "note.pdf", { type: "application/pdf" }));
+    const extracted = await dispatch(
+      new Request(`${origin}/api/visits/extract`, {
+        method: "POST",
+        headers: { origin, cookie: account.cookie },
+        body: form,
+      }),
+      ctx,
+    );
+    expect(extracted.status).toBe(200);
+    const body = await extracted.json();
+    expect(body.persisted).toBe(false);
+    expect(body.draft.startTime).toBe("");
+    expect(body.draft.warnings).toContain("No start time was read. Enter the time before saving.");
     ctx.extractVisit = undefined;
   });
 

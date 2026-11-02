@@ -1,6 +1,8 @@
 import { dispatch } from "@/server/http/router";
 import { getContext } from "@/server/context";
 
+export const maxDuration = 60;
+
 async function handle(request: Request) {
   const url = new URL(request.url);
   const context = getContext();

@@ -23,6 +23,7 @@ export type VisitExtractRequest = {
   mimeType: string;
   bytes: Uint8Array;
   patients: Array<{ id: string; givenName: string; familyName: string }>;
+  clinicians: Array<{ displayName: string; role: string }>;
 };
 
 export async function extractVisitWithGateway(input: VisitExtractRequest): Promise<ExtractedVisitFields> {
@@ -38,15 +39,24 @@ export async function extractVisitWithGateway(input: VisitExtractRequest): Promi
     const result = await generateText({
       model: process.env.AI_VISIT_MODEL?.trim() || "google/gemini-3.8-flash",
       output: Output.object({ schema: extractedVisitSchema }),
-      instructions:
-        "Extract encounter details and pre-visit intake from a medical bill, explanation of benefits, receipt, or similar care document. Use null or empty arrays when a field is not clearly present. Do not invent a patient name, date, time, provider, modality, chief complaint, allergy, or medication. Dates must be YYYY-MM-DD. Times must be HH:MM in 24-hour time. Provider role must be physician, nurse, therapist, or other. Modality must be in_person_outpatient, telehealth_video, phone, or home_visit. Allergy severity must be mild, moderate, or anaphylactic. Medication kind must be prescription or supplement.",
+      instructions: [
+        "Extract encounter details and pre-visit intake from a medical bill, explanation of benefits, receipt, after-visit summary, or similar care document.",
+        "Return the same fields a person would type: patient name, encounter date, start time, care provider name and role, encounter modality, chief complaint in the patient's words, allergies with reaction severity, and current medications with dosages.",
+        "Use null or empty arrays when a field is not clearly present. Do not invent a patient name, date, time, provider, modality, chief complaint, allergy, or medication.",
+        "Dates must be YYYY-MM-DD. Times must be HH:MM in 24-hour time.",
+        "Provider role must be physician, nurse, therapist, or other.",
+        "Modality must be in_person_outpatient, telehealth_video, phone, or home_visit.",
+        "Allergy severity must be mild, moderate, or anaphylactic.",
+        "Medication kind must be prescription or supplement.",
+        householdContext(input),
+      ].join(" "),
       messages: [
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: "Extract the patient name, visit date, start time, care provider name and role, encounter modality, chief complaint in the patient's words, allergies with reaction severity, and current medications with dosages. Leave a field null rather than guessing.",
+              text: "Extract the visit fields from this document. Leave a field null rather than guessing. The user will review and edit every value before anything is saved.",
             },
             {
               type: "file",
@@ -66,4 +76,17 @@ export async function extractVisitWithGateway(input: VisitExtractRequest): Promi
     if (error instanceof HttpError) throw error;
     throw new HttpError(502, "extract_failed", "The document could not be read. Nothing was saved. You can enter the visit by hand.");
   }
+}
+
+function householdContext(input: VisitExtractRequest) {
+  const people = input.patients.map((person) => `${person.givenName} ${person.familyName}`.trim()).filter(Boolean);
+  const clinicians = input.clinicians.map((person) => `${person.displayName} (${person.role})`.trim()).filter(Boolean);
+  const parts = [];
+  if (people.length > 0) {
+    parts.push(`Known household patients: ${people.join("; ")}. If the document names one of these people, return that exact name.`);
+  }
+  if (clinicians.length > 0) {
+    parts.push(`Known clinicians, nurses, and therapists: ${clinicians.join("; ")}. If the document names one of these people, return that exact display name and role.`);
+  }
+  return parts.join(" ");
 }

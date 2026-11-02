@@ -71,9 +71,9 @@ export function VisitForm({
   const [visitDate, setVisitDate] = useState(initial?.visitDate ?? "");
   const [startTime, setStartTime] = useState(initial?.startTime ?? "");
   const [provider, setProvider] = useState(initial?.provider ?? "");
-  const [providerRole, setProviderRole] = useState(initial?.providerRole ?? "physician");
-  const [selectedClinician, setSelectedClinician] = useState("");
-  const [modality, setModality] = useState(initial?.modality ?? "in_person_outpatient");
+  const [providerRole, setProviderRole] = useState(() => initial?.providerRole || matchingClinician(initial?.provider ?? "", clinicians)?.role || "physician");
+  const [selectedClinician, setSelectedClinician] = useState(() => matchingClinician(initial?.provider ?? "", clinicians)?.id ?? "");
+  const [modality, setModality] = useState(initial?.modality || "in_person_outpatient");
   const [chiefComplaint, setChiefComplaint] = useState(initial?.chiefComplaint ?? initial?.reason ?? "");
   const [allergies, setAllergies] = useState<AllergyRow[]>(() => rowsFromAllergies(initial?.allergies));
   const [medications, setMedications] = useState<MedicationRow[]>(() => rowsFromMedications(initial?.medications));
@@ -261,7 +261,9 @@ export function VisitForm({
       </fieldset>
 
       {message ? <p className="form-error" role="alert">Error: {message}</p> : null}
-      <button className="primary" type="submit" disabled={pending || patients.length === 0}>{pending ? "Saving" : "Save visit"}</button>
+      <button className="primary" type="submit" disabled={pending || patients.length === 0}>
+        {pending ? "Saving" : extracted ? "Confirm and save visit" : "Save visit"}
+      </button>
     </form>
   );
 }
@@ -284,6 +286,10 @@ export function VisitExtractForm({
   if (draft) {
     return (
       <div className="stack">
+        <p><Link href="/app/visits/new">Back to add a visit</Link></p>
+        <p className="eyebrow">New visit · From a document</p>
+        <h1>Review visit details</h1>
+        <p className="lede">These are the same encounter and intake fields as the manual form. Change anything that is wrong, then confirm. Nothing is saved until you confirm.</p>
         <VisitForm
           key={`${draft.patientId}-${draft.visitDate}-${draft.provider}`}
           patients={patients}
@@ -337,6 +343,11 @@ export function VisitExtractForm({
         setDraft(data.draft);
       }}
     >
+      <p><Link href="/app/visits/new">Back to add a visit</Link></p>
+      <p className="eyebrow">New visit · From a document</p>
+      <h1>Upload a document</h1>
+      <p className="lede">CareUnfold reads the file and fills the same encounter and intake fields you would type by hand. You review and edit them next. Nothing is stored until you confirm.</p>
+      {pending ? <Notice tone="info" title="Reading the document">This can take a few seconds. The visit is not saved yet.</Notice> : null}
       <label htmlFor="extract-kind">Document type</label>
       <select id="extract-kind" value={kind} onChange={(event) => setKind(event.target.value)}>
         <option value="bill">Bill</option>
@@ -353,7 +364,7 @@ export function VisitExtractForm({
         required
         onChange={(event) => setFile(event.target.files?.[0] ?? null)}
       />
-      <p className="muted">CareUnfold drafts the same encounter and intake fields you would type by hand. The visit is not saved until you review and confirm them.</p>
+      <p className="muted">Supported files: PDF, JPEG, PNG, or WebP. The drafted fields stay editable.</p>
       {message ? <p className="form-error" role="alert">Error: {message}</p> : null}
       <div className="actions">
         <button className="primary" type="submit" disabled={pending || patients.length === 0}>{pending ? "Reading" : "Read document"}</button>
@@ -361,6 +372,17 @@ export function VisitExtractForm({
       </div>
     </form>
   );
+}
+
+function matchingClinician(provider: string, clinicians: VisitClinician[]) {
+  const needle = provider.trim().toLowerCase();
+  if (!needle) return null;
+  return clinicians.find((person) => person.displayName.trim().toLowerCase() === needle)
+    ?? clinicians.find((person) => {
+      const name = person.displayName.trim().toLowerCase();
+      return name.includes(needle) || needle.includes(name);
+    })
+    ?? null;
 }
 
 function nextRowIndex(rows: Array<{ key: string }>, prefix: string) {
