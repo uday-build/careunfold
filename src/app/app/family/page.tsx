@@ -15,7 +15,7 @@ export default async function FamilyPage() {
   return (
     <section className="stack">
       <h1>Family</h1>
-      <p className="lede">Household setup and the relationship graph. Coverage records stay typed by you.</p>
+      <p className="lede">Household setup and the relationship graph. Insurance ID cards and coverage records stay typed by you.</p>
       <p><Link href="/app/coverage">Open coverage records</Link></p>
       <Notice tone="info" title="Household administration is separate from patient access">
         Adding someone to the household does not let them open protected records. Access comes only from a self profile, an accepted invitation, or a policy-backed representative approval.

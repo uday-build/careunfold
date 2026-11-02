@@ -88,7 +88,96 @@ describe("family onboarding", () => {
       officeVisitCopay: { state: "known", amountUsd: "40" },
       coinsurance: { state: "known", percent: 20 },
       outOfPocketMax: { state: "unknown" },
+      innFamilyDeductible: { state: "unknown" },
+      innFamilyOutOfPocketMax: { state: "unknown" },
+      specialistCopay: { state: "unknown" },
+      urgentCareCopay: { state: "unknown" },
+      emergencyCopay: { state: "unknown" },
     });
+  });
+
+  it("requires group ID, member name, and member ID, and stores the rest of the ID card", async () => {
+    const created = await register(ctx, "family-card@example.com");
+    await saveProfile(ctx, created.cookie, "Avery Quinn", "self");
+    const family = await api(ctx, "/api/onboarding/family", {
+      method: "POST",
+      cookie: created.cookie,
+      idempotencyKey: "family-card",
+      body: { patients: [selfPatient("self-card")] },
+    });
+    const missing = await api(ctx, "/api/onboarding/coverage", {
+      method: "POST",
+      cookie: created.cookie,
+      idempotencyKey: "coverage-card-missing",
+      body: {
+        records: [
+          {
+            clientKey: "coverage-card-missing",
+            start: { state: "unknown" },
+            end: { state: "unknown" },
+            coveredPatientIds: [],
+          },
+        ],
+      },
+    });
+    expect(missing.status).toBe(422);
+
+    const selfId = family.data.onboarding.patients[0].id as string;
+    const saved = await api(ctx, "/api/onboarding/coverage", {
+      method: "POST",
+      cookie: created.cookie,
+      idempotencyKey: "coverage-card-full",
+      body: {
+        records: [
+          {
+            clientKey: "coverage-card-full",
+            subscriberName: "Avery Quinn",
+            memberId: "MEM-4411",
+            groupNumber: "GRP-77",
+            start: { state: "unknown" },
+            end: { state: "unknown" },
+            coveredPatientIds: [selfId],
+            benefits: {
+              deductible: { state: "known", amountUsd: "500" },
+              officeVisitCopay: { state: "known", amountUsd: "25" },
+              coinsurance: { state: "known", percent: 10 },
+              outOfPocketMax: { state: "known", amountUsd: "4000" },
+              innFamilyDeductible: { state: "known", amountUsd: "1000" },
+              innFamilyOutOfPocketMax: { state: "known", amountUsd: "8000" },
+              specialistCopay: { state: "known", amountUsd: "50" },
+              urgentCareCopay: { state: "unknown" },
+              emergencyCopay: { state: "known", amountUsd: "250" },
+            },
+            memberServicesName: "Northwind Member Services",
+            memberServicesPhone: "800-555-0100",
+            memberServicesUrl: "https://northwind.example/members",
+            rxBin: "004336",
+            rxPcn: "ADV",
+            rxGrp: "RX77",
+            pharmacyWebsiteUrl: "https://northwind.example/rx",
+            pharmacyMemberServicesPhone: "800-555-0199",
+            pharmacyPhone: "800-555-0188",
+            claimsAddress: "PO Box 100, Portland OR 97201",
+            claimsPhone: "800-555-0177",
+            claimsUrl: "https://northwind.example/claims",
+            providerSupportPhone: "800-555-0166",
+          },
+        ],
+      },
+    });
+    expect(saved.status).toBe(200);
+    const card = saved.data.onboarding.coverage[0];
+    expect(card.groupNumber).toBe("GRP-77");
+    expect(card.subscriberName).toBe("Avery Quinn");
+    expect(card.memberIdMasked).toBe("••11");
+    expect(card.rxBin).toBe("004336");
+    expect(card.rxPcn).toBe("ADV");
+    expect(card.rxGrp).toBe("RX77");
+    expect(card.memberServicesName).toBe("Northwind Member Services");
+    expect(card.claimsAddress).toBe("PO Box 100, Portland OR 97201");
+    expect(card.providerSupportPhone).toBe("800-555-0166");
+    expect(card.benefits.innFamilyDeductible).toEqual({ state: "known", amountUsd: "1000" });
+    expect(card.benefits.specialistCopay).toEqual({ state: "known", amountUsd: "50" });
   });
 
   it("lets the relationship graph be corrected after coverage and before review", async () => {

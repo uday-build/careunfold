@@ -35,6 +35,30 @@ const optionalText = z
   .nullable()
   .transform((value) => (value ? value : null));
 
+const optionalPhone = z
+  .string()
+  .trim()
+  .max(40)
+  .optional()
+  .nullable()
+  .transform((value) => (value ? value : null));
+
+const optionalUrl = z
+  .string()
+  .trim()
+  .max(200)
+  .optional()
+  .nullable()
+  .transform((value) => (value ? value : null));
+
+const optionalAddress = z
+  .string()
+  .trim()
+  .max(200)
+  .optional()
+  .nullable()
+  .transform((value) => (value ? value : null));
+
 export const profileInputSchema = z.object({
   displayName: requiredName,
   organizingFor: z.enum(["self", "someone_else", "both"]),
@@ -95,6 +119,11 @@ export const planBenefitsSchema = z.object({
   officeVisitCopay: moneyBenefitSchema,
   coinsurance: percentBenefitSchema,
   outOfPocketMax: moneyBenefitSchema,
+  innFamilyDeductible: moneyBenefitSchema.optional(),
+  innFamilyOutOfPocketMax: moneyBenefitSchema.optional(),
+  specialistCopay: moneyBenefitSchema.optional(),
+  urgentCareCopay: moneyBenefitSchema.optional(),
+  emergencyCopay: moneyBenefitSchema.optional(),
 });
 
 export type PlanBenefits = z.infer<typeof planBenefitsSchema>;
@@ -104,20 +133,38 @@ export const UNKNOWN_PLAN_BENEFITS: PlanBenefits = {
   officeVisitCopay: { state: "unknown" },
   coinsurance: { state: "unknown" },
   outOfPocketMax: { state: "unknown" },
+  innFamilyDeductible: { state: "unknown" },
+  innFamilyOutOfPocketMax: { state: "unknown" },
+  specialistCopay: { state: "unknown" },
+  urgentCareCopay: { state: "unknown" },
+  emergencyCopay: { state: "unknown" },
 };
 
 export const coverageInputSchema = z.object({
   clientKey: z.string().trim().min(8).max(80),
   insurer: optionalText,
   planName: optionalText,
-  subscriberName: optionalText,
+  subscriberName: z.string().trim().min(1, "Enter the member name.").max(80, "Use 80 characters or fewer."),
   subscriberPatientId: z.string().trim().optional().nullable(),
-  memberId: optionalText,
-  groupNumber: optionalText,
+  memberId: z.string().trim().min(1, "Enter the member ID.").max(64, "Use 64 characters or fewer."),
+  groupNumber: z.string().trim().min(1, "Enter the group ID.").max(80, "Use 80 characters or fewer."),
   start: dateFieldSchema,
   end: dateFieldSchema,
   coveredPatientIds: z.array(z.string().trim()).max(12),
   benefits: planBenefitsSchema.optional(),
+  memberServicesName: optionalText,
+  memberServicesPhone: optionalPhone,
+  memberServicesUrl: optionalUrl,
+  rxBin: optionalText,
+  rxPcn: optionalText,
+  rxGrp: optionalText,
+  pharmacyWebsiteUrl: optionalUrl,
+  pharmacyMemberServicesPhone: optionalPhone,
+  pharmacyPhone: optionalPhone,
+  claimsAddress: optionalAddress,
+  claimsPhone: optionalPhone,
+  claimsUrl: optionalUrl,
+  providerSupportPhone: optionalPhone,
 });
 
 export const coverageSaveSchema = z.object({

@@ -1303,11 +1303,6 @@ async function upsertCoverage(
       [`records.${index}.end`]: "The end date cannot be earlier than the start date.",
     });
   }
-  if (record.memberId && record.memberId.length > 64) {
-    throw new HttpError(422, "invalid_fields", "Check the highlighted fields.", {
-      [`records.${index}.memberId`]: "Use 64 characters or fewer.",
-    });
-  }
   const people = await tx.select({ id: patient.id }).from(patient).where(eq(patient.householdId, householdId));
   const ids = new Set(people.map((item) => item.id));
   if (record.subscriberPatientId && !ids.has(record.subscriberPatientId)) {
@@ -1323,6 +1318,7 @@ async function upsertCoverage(
     }
   }
   const benefits = normalizePlanBenefits(record.benefits);
+  const card = coverageCardFields(record);
   const [saved] = await tx
     .insert(coverage)
     .values({
@@ -1340,6 +1336,7 @@ async function upsertCoverage(
       startDateState: start.state,
       endDateState: end.state,
       benefits,
+      ...card,
       version: 1,
       createdByUserId: actor.id,
       createdAt: now,
@@ -1359,6 +1356,7 @@ async function upsertCoverage(
         startDateState: start.state,
         endDateState: end.state,
         benefits,
+        ...card,
         updatedAt: now,
         version: sql`${coverage.version} + 1`,
       },
@@ -1381,6 +1379,7 @@ async function upsertCoverage(
       startDateState: saved.startDateState,
       endDateState: saved.endDateState,
       benefits,
+      ...card,
       coveredPatientIds: record.coveredPatientIds,
     },
     createdAt: now,
@@ -1451,24 +1450,42 @@ function normalizeDateField(
   return { state: "known", value: assertRealDate(field.value, key) };
 }
 
-function normalizePlanBenefits(value: PlanBenefits | undefined): PlanBenefits {
+function coverageCardFields(record: CoverageInput) {
+  return {
+    memberServicesName: record.memberServicesName ?? null,
+    memberServicesPhone: record.memberServicesPhone ?? null,
+    memberServicesUrl: record.memberServicesUrl ?? null,
+    rxBin: record.rxBin ?? null,
+    rxPcn: record.rxPcn ?? null,
+    rxGrp: record.rxGrp ?? null,
+    pharmacyWebsiteUrl: record.pharmacyWebsiteUrl ?? null,
+    pharmacyMemberServicesPhone: record.pharmacyMemberServicesPhone ?? null,
+    pharmacyPhone: record.pharmacyPhone ?? null,
+    claimsAddress: record.claimsAddress ?? null,
+    claimsPhone: record.claimsPhone ?? null,
+    claimsUrl: record.claimsUrl ?? null,
+    providerSupportPhone: record.providerSupportPhone ?? null,
+  };
+}
+
+function normalizePlanBenefits(value: Partial<PlanBenefits> | undefined): PlanBenefits {
   return {
     deductible: value?.deductible ?? { state: "unknown" },
     officeVisitCopay: value?.officeVisitCopay ?? { state: "unknown" },
     coinsurance: value?.coinsurance ?? { state: "unknown" },
     outOfPocketMax: value?.outOfPocketMax ?? { state: "unknown" },
+    innFamilyDeductible: value?.innFamilyDeductible ?? { state: "unknown" },
+    innFamilyOutOfPocketMax: value?.innFamilyOutOfPocketMax ?? { state: "unknown" },
+    specialistCopay: value?.specialistCopay ?? { state: "unknown" },
+    urgentCareCopay: value?.urgentCareCopay ?? { state: "unknown" },
+    emergencyCopay: value?.emergencyCopay ?? { state: "unknown" },
   };
 }
 
 function readPlanBenefits(value: unknown): PlanBenefits {
   if (!value || typeof value !== "object") return UNKNOWN_PLAN_BENEFITS;
   const record = value as Partial<PlanBenefits>;
-  return normalizePlanBenefits({
-    deductible: record.deductible ?? { state: "unknown" },
-    officeVisitCopay: record.officeVisitCopay ?? { state: "unknown" },
-    coinsurance: record.coinsurance ?? { state: "unknown" },
-    outOfPocketMax: record.outOfPocketMax ?? { state: "unknown" },
-  });
+  return normalizePlanBenefits(record);
 }
 
 async function buildOnboardingBody(ctx: AppContext, actor: Actor, database: Database = ctx.db) {
@@ -1627,6 +1644,19 @@ async function loadCoverageViews(db: Database, householdId: string, includeMembe
       end: record.endDateState === "known" ? { state: "known", value: record.coverageEnd } : { state: "unknown" },
       coveredPatientIds: links.map((link) => link.patientId),
       benefits: readPlanBenefits(record.benefits),
+      memberServicesName: record.memberServicesName,
+      memberServicesPhone: record.memberServicesPhone,
+      memberServicesUrl: record.memberServicesUrl,
+      rxBin: record.rxBin,
+      rxPcn: record.rxPcn,
+      rxGrp: record.rxGrp,
+      pharmacyWebsiteUrl: record.pharmacyWebsiteUrl,
+      pharmacyMemberServicesPhone: record.pharmacyMemberServicesPhone,
+      pharmacyPhone: record.pharmacyPhone,
+      claimsAddress: record.claimsAddress,
+      claimsPhone: record.claimsPhone,
+      claimsUrl: record.claimsUrl,
+      providerSupportPhone: record.providerSupportPhone,
       version: record.version,
     });
   }

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { Notice, TextField } from "@/components/shell";
+import { Notice, TextArea, TextField } from "@/components/shell";
 import {
   CAREGIVER_PERMISSIONS,
   DEFAULT_SHARED_SCOPES,
@@ -57,6 +57,19 @@ export type CoverageDraft = {
   endValue: string;
   coveredPatientIds: string[];
   benefits: PlanBenefits;
+  memberServicesName: string;
+  memberServicesPhone: string;
+  memberServicesUrl: string;
+  rxBin: string;
+  rxPcn: string;
+  rxGrp: string;
+  pharmacyWebsiteUrl: string;
+  pharmacyMemberServicesPhone: string;
+  pharmacyPhone: string;
+  claimsAddress: string;
+  claimsPhone: string;
+  claimsUrl: string;
+  providerSupportPhone: string;
 };
 
 type Onboarding = {
@@ -84,6 +97,19 @@ type CoverageSource = {
   start?: { state: string; value?: string | null };
   end?: { state: string; value?: string | null };
   benefits?: PlanBenefits | null;
+  memberServicesName?: string | null;
+  memberServicesPhone?: string | null;
+  memberServicesUrl?: string | null;
+  rxBin?: string | null;
+  rxPcn?: string | null;
+  rxGrp?: string | null;
+  pharmacyWebsiteUrl?: string | null;
+  pharmacyMemberServicesPhone?: string | null;
+  pharmacyPhone?: string | null;
+  claimsAddress?: string | null;
+  claimsPhone?: string | null;
+  claimsUrl?: string | null;
+  providerSupportPhone?: string | null;
 };
 
 export function ProfileForm({ onboarding }: { onboarding: Onboarding }) {
@@ -272,7 +298,7 @@ export function CoverageForm({ onboarding, continueTo = "/onboarding/review" }: 
   const [records, setRecords] = useState<CoverageDraft[]>(
     onboarding.coverage.length > 0
       ? onboarding.coverage.map(toCoverageDraft)
-      : [],
+      : [emptyCoverage()],
   );
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -290,14 +316,27 @@ export function CoverageForm({ onboarding, continueTo = "/onboarding/review" }: 
               clientKey: record.clientKey,
               insurer: record.insurer || null,
               planName: record.planName || null,
-              subscriberName: record.subscriberName || null,
+              subscriberName: record.subscriberName,
               subscriberPatientId: record.subscriberPatientId || null,
-              memberId: record.memberId || null,
-              groupNumber: record.groupNumber || null,
+              memberId: record.memberId,
+              groupNumber: record.groupNumber,
               start: record.startState === "known" ? { state: "known", value: record.startValue } : { state: "unknown" },
               end: record.endState === "known" ? { state: "known", value: record.endValue } : { state: "unknown" },
               coveredPatientIds: record.coveredPatientIds,
               benefits: record.benefits,
+              memberServicesName: record.memberServicesName || null,
+              memberServicesPhone: record.memberServicesPhone || null,
+              memberServicesUrl: record.memberServicesUrl || null,
+              rxBin: record.rxBin || null,
+              rxPcn: record.rxPcn || null,
+              rxGrp: record.rxGrp || null,
+              pharmacyWebsiteUrl: record.pharmacyWebsiteUrl || null,
+              pharmacyMemberServicesPhone: record.pharmacyMemberServicesPhone || null,
+              pharmacyPhone: record.pharmacyPhone || null,
+              claimsAddress: record.claimsAddress || null,
+              claimsPhone: record.claimsPhone || null,
+              claimsUrl: record.claimsUrl || null,
+              providerSupportPhone: record.providerSupportPhone || null,
             })),
           },
     });
@@ -313,73 +352,112 @@ export function CoverageForm({ onboarding, continueTo = "/onboarding/review" }: 
 
   return (
     <div className="stack">
-      <p className="muted">Coverage is optional. Member IDs are masked in lists. Benefits are stored only as you type them. No coverage card is uploaded in this version.</p>
+      <p className="muted">Coverage is optional. If you add an ID card, Group ID, member name, and member ID are required. Member IDs are masked in lists. Nothing is read from a photo in this version.</p>
       {records.map((record, index) => (
         <section className="card stack" key={record.clientKey}>
-          <h2>Coverage record</h2>
-          <div className="person-grid">
-            <TextField id={`insurer-${record.clientKey}`} label="Insurer" value={record.insurer} onChange={(insurer) => updateRecord(setRecords, index, { insurer })} />
-            <TextField id={`plan-${record.clientKey}`} label="Plan name" value={record.planName} onChange={(planName) => updateRecord(setRecords, index, { planName })} />
-            <TextField id={`subscriber-${record.clientKey}`} label="Subscriber name" value={record.subscriberName} onChange={(subscriberName) => updateRecord(setRecords, index, { subscriberName })} />
-            <TextField id={`member-${record.clientKey}`} label="Member ID" value={record.memberId} onChange={(memberId) => updateRecord(setRecords, index, { memberId })} />
-            <TextField id={`group-${record.clientKey}`} label="Group number" value={record.groupNumber} onChange={(groupNumber) => updateRecord(setRecords, index, { groupNumber })} />
-          </div>
-          <label htmlFor={`subscriber-person-${record.clientKey}`}>Subscriber in this household</label>
-          <select
-            id={`subscriber-person-${record.clientKey}`}
-            value={record.subscriberPatientId}
-            onChange={(event) => updateRecord(setRecords, index, { subscriberPatientId: event.target.value })}
-          >
-            <option value="">Unknown</option>
-            {onboarding.patients.map((person) => (
-              <option key={person.id ?? person.clientKey} value={person.id}>{person.givenName} {person.familyName}</option>
-            ))}
-          </select>
+          <h2>Insurance ID card</h2>
           <fieldset className="stack">
-            <legend>Covered people</legend>
-            <div className="permission-list">
-              {onboarding.patients.map((person) => {
-                const id = person.id ?? "";
-                return (
-                  <label key={person.clientKey} htmlFor={`covered-${record.clientKey}-${person.clientKey}`}>
-                    <input
-                      id={`covered-${record.clientKey}-${person.clientKey}`}
-                      type="checkbox"
-                      checked={Boolean(id) && record.coveredPatientIds.includes(id)}
-                      disabled={!id}
-                      onChange={(event) => {
-                        const next = new Set(record.coveredPatientIds);
-                        if (event.target.checked) next.add(id);
-                        else next.delete(id);
-                        updateRecord(setRecords, index, { coveredPatientIds: Array.from(next) });
-                      }}
-                    />
-                    <span>{person.givenName} {person.familyName}</span>
-                  </label>
-                );
-              })}
+            <legend>Member identifiers</legend>
+            <div className="person-grid">
+              <TextField id={`group-${record.clientKey}`} label="Group ID" required value={record.groupNumber} onChange={(groupNumber) => updateRecord(setRecords, index, { groupNumber })} />
+              <TextField id={`subscriber-${record.clientKey}`} label="Member name" required value={record.subscriberName} onChange={(subscriberName) => updateRecord(setRecords, index, { subscriberName })} />
+              <TextField id={`member-${record.clientKey}`} label="Member ID" required value={record.memberId} onChange={(memberId) => updateRecord(setRecords, index, { memberId })} />
+              <TextField id={`insurer-${record.clientKey}`} label="Insurer" value={record.insurer} onChange={(insurer) => updateRecord(setRecords, index, { insurer })} />
+              <TextField id={`plan-${record.clientKey}`} label="Plan name" value={record.planName} onChange={(planName) => updateRecord(setRecords, index, { planName })} />
             </div>
-            {onboarding.patients.length === 0 ? <p className="muted">Save people in the family step before linking coverage.</p> : null}
+            <label htmlFor={`subscriber-person-${record.clientKey}`}>Subscriber in this household</label>
+            <select
+              id={`subscriber-person-${record.clientKey}`}
+              value={record.subscriberPatientId}
+              onChange={(event) => updateRecord(setRecords, index, { subscriberPatientId: event.target.value })}
+            >
+              <option value="">Unknown</option>
+              {onboarding.patients.map((person) => (
+                <option key={person.id ?? person.clientKey} value={person.id}>{person.givenName} {person.familyName}</option>
+              ))}
+            </select>
+            <fieldset className="stack">
+              <legend>Covered people</legend>
+              <div className="permission-list">
+                {onboarding.patients.map((person) => {
+                  const id = person.id ?? "";
+                  return (
+                    <label key={person.clientKey} htmlFor={`covered-${record.clientKey}-${person.clientKey}`}>
+                      <input
+                        id={`covered-${record.clientKey}-${person.clientKey}`}
+                        type="checkbox"
+                        checked={Boolean(id) && record.coveredPatientIds.includes(id)}
+                        disabled={!id}
+                        onChange={(event) => {
+                          const next = new Set(record.coveredPatientIds);
+                          if (event.target.checked) next.add(id);
+                          else next.delete(id);
+                          updateRecord(setRecords, index, { coveredPatientIds: Array.from(next) });
+                        }}
+                      />
+                      <span>{person.givenName} {person.familyName}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              {onboarding.patients.length === 0 ? <p className="muted">Save people in the family step before linking coverage.</p> : null}
+            </fieldset>
+            <div className="two">
+              <DateChoice label="Coverage start" state={record.startState} value={record.startValue} onState={(startState) => updateRecord(setRecords, index, { startState })} onValue={(startValue) => updateRecord(setRecords, index, { startValue })} />
+              <DateChoice label="Coverage end" state={record.endState} value={record.endValue} onState={(endState) => updateRecord(setRecords, index, { endState })} onValue={(endValue) => updateRecord(setRecords, index, { endValue })} />
+            </div>
           </fieldset>
-          <div className="two">
-            <DateChoice label="Coverage start" state={record.startState} value={record.startValue} onState={(startState) => updateRecord(setRecords, index, { startState })} onValue={(startValue) => updateRecord(setRecords, index, { startValue })} />
-            <DateChoice label="Coverage end" state={record.endState} value={record.endValue} onState={(endState) => updateRecord(setRecords, index, { endState })} onValue={(endValue) => updateRecord(setRecords, index, { endValue })} />
-          </div>
           <fieldset className="stack">
-            <legend>Simplified plan benefits</legend>
-            <p className="muted">Each benefit is stored as known or unknown. CareUnfold does not infer missing amounts.</p>
+            <legend>Network and benefits (optional)</legend>
+            <p className="muted">In-network single and family amounts, and what the member pays. Each value is stored as known or unknown. CareUnfold does not infer missing amounts.</p>
             <div className="person-grid">
               <MoneyBenefitField
-                id={`deductible-${record.clientKey}`}
-                label="Annual deductible"
+                id={`inn-ind-deductible-${record.clientKey}`}
+                label="In-network individual deductible"
                 value={record.benefits.deductible}
                 onChange={(deductible) => updateRecord(setRecords, index, { benefits: { ...record.benefits, deductible } })}
               />
               <MoneyBenefitField
+                id={`inn-fam-deductible-${record.clientKey}`}
+                label="In-network family deductible"
+                value={record.benefits.innFamilyDeductible ?? { state: "unknown" }}
+                onChange={(innFamilyDeductible) => updateRecord(setRecords, index, { benefits: { ...record.benefits, innFamilyDeductible } })}
+              />
+              <MoneyBenefitField
+                id={`inn-ind-oop-${record.clientKey}`}
+                label="In-network individual out-of-pocket max"
+                value={record.benefits.outOfPocketMax}
+                onChange={(outOfPocketMax) => updateRecord(setRecords, index, { benefits: { ...record.benefits, outOfPocketMax } })}
+              />
+              <MoneyBenefitField
+                id={`inn-fam-oop-${record.clientKey}`}
+                label="In-network family out-of-pocket max"
+                value={record.benefits.innFamilyOutOfPocketMax ?? { state: "unknown" }}
+                onChange={(innFamilyOutOfPocketMax) => updateRecord(setRecords, index, { benefits: { ...record.benefits, innFamilyOutOfPocketMax } })}
+              />
+              <MoneyBenefitField
                 id={`copay-${record.clientKey}`}
-                label="Office visit copay"
+                label="Primary care / office visit copay"
                 value={record.benefits.officeVisitCopay}
                 onChange={(officeVisitCopay) => updateRecord(setRecords, index, { benefits: { ...record.benefits, officeVisitCopay } })}
+              />
+              <MoneyBenefitField
+                id={`specialist-${record.clientKey}`}
+                label="Specialist copay"
+                value={record.benefits.specialistCopay ?? { state: "unknown" }}
+                onChange={(specialistCopay) => updateRecord(setRecords, index, { benefits: { ...record.benefits, specialistCopay } })}
+              />
+              <MoneyBenefitField
+                id={`urgent-${record.clientKey}`}
+                label="Urgent care copay"
+                value={record.benefits.urgentCareCopay ?? { state: "unknown" }}
+                onChange={(urgentCareCopay) => updateRecord(setRecords, index, { benefits: { ...record.benefits, urgentCareCopay } })}
+              />
+              <MoneyBenefitField
+                id={`er-${record.clientKey}`}
+                label="Emergency copay"
+                value={record.benefits.emergencyCopay ?? { state: "unknown" }}
+                onChange={(emergencyCopay) => updateRecord(setRecords, index, { benefits: { ...record.benefits, emergencyCopay } })}
               />
               <PercentBenefitField
                 id={`coinsurance-${record.clientKey}`}
@@ -387,17 +465,43 @@ export function CoverageForm({ onboarding, continueTo = "/onboarding/review" }: 
                 value={record.benefits.coinsurance}
                 onChange={(coinsurance) => updateRecord(setRecords, index, { benefits: { ...record.benefits, coinsurance } })}
               />
-              <MoneyBenefitField
-                id={`oop-${record.clientKey}`}
-                label="Out-of-pocket maximum"
-                value={record.benefits.outOfPocketMax}
-                onChange={(outOfPocketMax) => updateRecord(setRecords, index, { benefits: { ...record.benefits, outOfPocketMax } })}
-              />
             </div>
           </fieldset>
+          <fieldset className="stack">
+            <legend>Member services (optional)</legend>
+            <div className="person-grid">
+              <TextField id={`ms-name-${record.clientKey}`} label="Name" value={record.memberServicesName} onChange={(memberServicesName) => updateRecord(setRecords, index, { memberServicesName })} />
+              <TextField id={`ms-phone-${record.clientKey}`} label="Contact number" type="tel" value={record.memberServicesPhone} onChange={(memberServicesPhone) => updateRecord(setRecords, index, { memberServicesPhone })} />
+              <TextField id={`ms-url-${record.clientKey}`} label="Website URL" value={record.memberServicesUrl} onChange={(memberServicesUrl) => updateRecord(setRecords, index, { memberServicesUrl })} />
+            </div>
+          </fieldset>
+          <fieldset className="stack">
+            <legend>Pharmacy plan (optional)</legend>
+            <div className="person-grid">
+              <TextField id={`rxbin-${record.clientKey}`} label="RXBIN" value={record.rxBin} onChange={(rxBin) => updateRecord(setRecords, index, { rxBin })} />
+              <TextField id={`rxpcn-${record.clientKey}`} label="RXPCN" value={record.rxPcn} onChange={(rxPcn) => updateRecord(setRecords, index, { rxPcn })} />
+              <TextField id={`rxgrp-${record.clientKey}`} label="RXGRP" value={record.rxGrp} onChange={(rxGrp) => updateRecord(setRecords, index, { rxGrp })} />
+              <TextField id={`rx-url-${record.clientKey}`} label="Website URL" value={record.pharmacyWebsiteUrl} onChange={(pharmacyWebsiteUrl) => updateRecord(setRecords, index, { pharmacyWebsiteUrl })} />
+              <TextField id={`rx-ms-${record.clientKey}`} label="Member services number" type="tel" value={record.pharmacyMemberServicesPhone} onChange={(pharmacyMemberServicesPhone) => updateRecord(setRecords, index, { pharmacyMemberServicesPhone })} />
+              <TextField id={`rx-phone-${record.clientKey}`} label="Pharmacy number" type="tel" value={record.pharmacyPhone} onChange={(pharmacyPhone) => updateRecord(setRecords, index, { pharmacyPhone })} />
+            </div>
+          </fieldset>
+          <fieldset className="stack">
+            <legend>Claims submission</legend>
+            <TextArea id={`claims-address-${record.clientKey}`} label="Address" value={record.claimsAddress} onChange={(claimsAddress) => updateRecord(setRecords, index, { claimsAddress })} />
+            <div className="person-grid">
+              <TextField id={`claims-phone-${record.clientKey}`} label="Phone number" type="tel" value={record.claimsPhone} onChange={(claimsPhone) => updateRecord(setRecords, index, { claimsPhone })} />
+              <TextField id={`claims-url-${record.clientKey}`} label="Website URL" value={record.claimsUrl} onChange={(claimsUrl) => updateRecord(setRecords, index, { claimsUrl })} />
+            </div>
+          </fieldset>
+          <fieldset className="stack">
+            <legend>Provider services</legend>
+            <TextField id={`provider-phone-${record.clientKey}`} label="Provider support number" type="tel" value={record.providerSupportPhone} onChange={(providerSupportPhone) => updateRecord(setRecords, index, { providerSupportPhone })} />
+          </fieldset>
+          <button className="danger" type="button" onClick={() => setRecords((current) => current.filter((item) => item.clientKey !== record.clientKey))}>Remove this card</button>
         </section>
       ))}
-      <button className="secondary" type="button" onClick={() => setRecords((current) => [...current, emptyCoverage()])}>Add coverage</button>
+      <button className="secondary" type="button" onClick={() => setRecords((current) => [...current, emptyCoverage()])}>Add an ID card</button>
       {error ? <p className="form-error" role="alert">Error: {error}</p> : null}
       <div className="actions">
         <button className="primary" type="button" disabled={pending} onClick={() => save(false)}>Save and continue</button>
@@ -458,7 +562,11 @@ export function ReviewForm({ onboarding }: { onboarding: Onboarding }) {
           <li className="card stack" key={record.clientKey}>
             <strong>{record.insurer || "Insurer unknown"}</strong>
             <div>{record.planName || "Plan name unknown"}</div>
+            <div>Member {record.subscriberName || "unknown"} · Group {record.groupNumber || "unknown"}</div>
             <div>Member ID {record.memberIdMasked || "unknown"}</div>
+            {record.rxBin ? <div className="muted">Pharmacy RXBIN {record.rxBin}</div> : null}
+            {record.claimsAddress ? <div className="muted">Claims: {record.claimsAddress}</div> : null}
+            {record.providerSupportPhone ? <div className="muted">Provider support {record.providerSupportPhone}</div> : null}
             <p className="muted">{benefitSummary(record.benefits)}</p>
           </li>
         ))}
@@ -821,13 +929,25 @@ function emptyCoverage(): CoverageDraft {
     endValue: "",
     coveredPatientIds: [],
     benefits: { ...UNKNOWN_PLAN_BENEFITS },
+    memberServicesName: "",
+    memberServicesPhone: "",
+    memberServicesUrl: "",
+    rxBin: "",
+    rxPcn: "",
+    rxGrp: "",
+    pharmacyWebsiteUrl: "",
+    pharmacyMemberServicesPhone: "",
+    pharmacyPhone: "",
+    claimsAddress: "",
+    claimsPhone: "",
+    claimsUrl: "",
+    providerSupportPhone: "",
   };
 }
 
 function toCoverageDraft(record: CoverageSource): CoverageDraft {
   return {
     ...emptyCoverage(),
-    ...record,
     insurer: record.insurer ?? "",
     planName: record.planName ?? "",
     subscriberName: record.subscriberName ?? "",
@@ -839,7 +959,21 @@ function toCoverageDraft(record: CoverageSource): CoverageDraft {
     endState: record.end?.state === "known" ? "known" : record.endState === "known" ? "known" : "unknown",
     endValue: record.end?.value ?? record.endValue ?? "",
     coveredPatientIds: record.coveredPatientIds ?? [],
-    benefits: record.benefits ?? { ...UNKNOWN_PLAN_BENEFITS },
+    benefits: { ...UNKNOWN_PLAN_BENEFITS, ...record.benefits },
+    memberServicesName: record.memberServicesName ?? "",
+    memberServicesPhone: record.memberServicesPhone ?? "",
+    memberServicesUrl: record.memberServicesUrl ?? "",
+    rxBin: record.rxBin ?? "",
+    rxPcn: record.rxPcn ?? "",
+    rxGrp: record.rxGrp ?? "",
+    pharmacyWebsiteUrl: record.pharmacyWebsiteUrl ?? "",
+    pharmacyMemberServicesPhone: record.pharmacyMemberServicesPhone ?? "",
+    pharmacyPhone: record.pharmacyPhone ?? "",
+    claimsAddress: record.claimsAddress ?? "",
+    claimsPhone: record.claimsPhone ?? "",
+    claimsUrl: record.claimsUrl ?? "",
+    providerSupportPhone: record.providerSupportPhone ?? "",
+    clientKey: record.clientKey,
   };
 }
 
@@ -864,12 +998,13 @@ function permissionSummary(person: PatientDraft) {
 }
 
 function benefitSummary(benefits: PlanBenefits | null | undefined) {
-  const plan = benefits ?? UNKNOWN_PLAN_BENEFITS;
+  const plan = { ...UNKNOWN_PLAN_BENEFITS, ...benefits };
   const parts = [
-    plan.deductible.state === "known" ? `Deductible $${plan.deductible.amountUsd}` : "Deductible unknown",
+    plan.deductible.state === "known" ? `INN individual deductible $${plan.deductible.amountUsd}` : "INN individual deductible unknown",
+    plan.innFamilyDeductible?.state === "known" ? `INN family deductible $${plan.innFamilyDeductible.amountUsd}` : "INN family deductible unknown",
     plan.officeVisitCopay.state === "known" ? `Office copay $${plan.officeVisitCopay.amountUsd}` : "Office copay unknown",
     plan.coinsurance.state === "known" ? `Coinsurance ${plan.coinsurance.percent}%` : "Coinsurance unknown",
-    plan.outOfPocketMax.state === "known" ? `Out-of-pocket max $${plan.outOfPocketMax.amountUsd}` : "Out-of-pocket max unknown",
+    plan.outOfPocketMax.state === "known" ? `INN individual out-of-pocket max $${plan.outOfPocketMax.amountUsd}` : "INN individual out-of-pocket max unknown",
   ];
   return parts.join(" · ");
 }

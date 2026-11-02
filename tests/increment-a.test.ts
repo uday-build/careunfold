@@ -398,7 +398,7 @@ describe("increment A", () => {
           clientKey: "coverage-a11",
           insurer: "Northwind Health",
           planName: "Outpatient",
-          subscriberName: null,
+          subscriberName: "Avery Quinn",
           subscriberPatientId: patientId,
           memberId: "MEM-123456",
           groupNumber: "G-9",
@@ -442,10 +442,10 @@ describe("increment A", () => {
             clientKey: "coverage-a12",
             insurer: "Northwind",
             planName: null,
-            subscriberName: null,
+            subscriberName: "Avery Quinn",
             subscriberPatientId: null,
-            memberId: null,
-            groupNumber: null,
+            memberId: "MEM-12",
+            groupNumber: "G-12",
             start: { state: "known", value: "2024-05-01" },
             end: { state: "known", value: "2024-04-01" },
             coveredPatientIds: [saved.data.onboarding.patients[0].id],
@@ -464,10 +464,10 @@ describe("increment A", () => {
             clientKey: "coverage-unknown",
             insurer: null,
             planName: null,
-            subscriberName: null,
+            subscriberName: "Avery Quinn",
             subscriberPatientId: null,
-            memberId: null,
-            groupNumber: null,
+            memberId: "MEM-00",
+            groupNumber: "G-00",
             start: { state: "unknown" },
             end: { state: "unknown" },
             coveredPatientIds: [],
@@ -476,7 +476,7 @@ describe("increment A", () => {
       },
     });
     expect(unknown.data.onboarding.coverage[0].start).toEqual({ state: "unknown" });
-    expect(unknown.data.onboarding.coverage[0].subscriberName).toBeNull();
+    expect(unknown.data.onboarding.coverage[0].subscriberName).toBe("Avery Quinn");
   });
 
   it("A13 leaves representative authority pending and blocks protected records", async () => {

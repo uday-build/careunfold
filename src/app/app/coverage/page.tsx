@@ -13,7 +13,7 @@ export default async function CoveragePage() {
   return (
     <section className="stack">
       <h1>Coverage</h1>
-      <Notice tone="info" title="Typed coverage only">Member IDs are masked in lists. Skipping or saving here does not read a card or contact an insurer.</Notice>
+      <Notice tone="info" title="Typed coverage only">Enter Group ID, member name, and member ID from the card. Other card sections are optional. Member IDs are masked in lists. Saving here does not contact an insurer.</Notice>
       {home ? (
         <CoverageForm
           onboarding={{ ...onboarding, patients: home.patients, coverage: home.coverage }}
