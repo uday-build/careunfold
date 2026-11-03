@@ -267,6 +267,14 @@ export const visitInputSchema = z.object({
 
 export const documentKindSchema = z.enum(["bill", "eob", "receipt", "other"]);
 
+export const visitAskSchema = z.object({
+  request: z
+    .string()
+    .trim()
+    .min(1, "Enter what you want to look into.")
+    .max(500, "Use 500 characters or fewer."),
+});
+
 export function parseInput<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
   if (!result.success) {

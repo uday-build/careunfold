@@ -31,7 +31,10 @@ import {
   VISIT_DOCUMENT_BUCKET,
   type FileStore,
 } from "../storage/files";
-import { extractVisitWithGateway, type ExtractedVisitFields, type VisitExtractRequest } from "../ai/extract-visit";
+import { classifyBillingIssue, type ClassifyIssueRequest, type IssueClassification } from "../ai/classify-issue";
+import { extractClaimEvidence, type ClaimExtractRequest, type ExtractedClaimFields } from "../ai/extract-claim";
+import { extractVisitFields, type ExtractedVisitFields, type VisitExtractRequest } from "../ai/extract-visit";
+import { investigateBilling, type BillingInvestigation, type InvestigateBillingRequest } from "../ai/investigate-billing";
 import type { AppEnv } from "../env";
 import { HttpError } from "../http/errors";
 import type { Auth } from "../auth/create-auth";
@@ -63,6 +66,7 @@ import {
   privacyRequestSchema,
   profileInputSchema,
   revokeSchema,
+  visitAskSchema,
   visitInputSchema,
   type PlanBenefits,
   type Scope,
@@ -76,6 +80,9 @@ export type AppContext = {
   storage: FileStore;
   now: () => Date;
   extractVisit?: (input: VisitExtractRequest) => Promise<ExtractedVisitFields>;
+  classifyIssue?: (input: ClassifyIssueRequest) => Promise<IssueClassification>;
+  extractClaim?: (input: ClaimExtractRequest) => Promise<ExtractedClaimFields>;
+  investigateBilling?: (input: InvestigateBillingRequest) => Promise<BillingInvestigation>;
 };
 
 type CommandResult = { status: number; body: Record<string, unknown> };
@@ -529,7 +536,7 @@ export async function extractVisitDraft(
   if (patients.length === 0) {
     throw new HttpError(403, "grant_required", "Save a patient profile you can write before adding a visit.");
   }
-  const extractor = ctx.extractVisit ?? extractVisitWithGateway;
+  const extractor = ctx.extractVisit ?? extractVisitFields;
   const householdIds = [...new Set(patients.map((person) => person.householdId).filter(Boolean))];
   const clinicians = (
     await Promise.all(householdIds.map((householdId) => loadHouseholdClinicians(ctx.db, householdId)))
@@ -566,6 +573,172 @@ export async function getVisit(ctx: AppContext, actor: Actor, visitId: string) {
     canUpload: write.allowed,
     storageConfigured: ctx.storage.available,
   };
+}
+
+export async function askAboutVisit(ctx: AppContext, actor: Actor, visitId: string, raw: unknown) {
+  requireApproved(actor);
+  const input = parseInput(visitAskSchema, raw);
+  if (!isUuid(visitId)) throw new HttpError(404, "not_found", "That visit was not found.");
+  const [row] = await ctx.db.select().from(visit).where(eq(visit.id, visitId)).limit(1);
+  if (!row) throw new HttpError(404, "not_found", "That visit was not found.");
+  const decision = await decidePatientAccess(ctx.db, actor, row.patientId, "records.read", ctx.now());
+  if (!decision.allowed) throw new HttpError(decision.status, decision.code, decision.message);
+  await assertRate(ctx.db, actor.id, "visit.ask", 8, 15 * 60 * 1000, ctx.now());
+  const classify = ctx.classifyIssue ?? classifyBillingIssue;
+  const classification = await classify({ request: input.request });
+  const [person] = await ctx.db.select().from(patient).where(eq(patient.id, row.patientId)).limit(1);
+  const visitContext = {
+    patientName: person ? `${person.givenName} ${person.familyName}` : "Patient",
+    visitDate: row.visitDate,
+    provider: row.provider,
+  };
+  if (classification.route !== "investigate") {
+    return {
+      ok: true,
+      persisted: false,
+      classification,
+      investigation: null,
+      evidence: [],
+      message: askRouteMessage(classification),
+    };
+  }
+  const files = await loadVisitDocumentFiles(ctx, row.id);
+  if (classification.needsDocument >= 0.65 && files.length === 0) {
+    return {
+      ok: true,
+      persisted: false,
+      classification,
+      investigation: {
+        finding: "insufficient_information" as const,
+        explanations: [],
+        missingInformation: ["Upload a bill, explanation of benefits, or receipt for this visit."],
+        assumptions: ["This look-in used the visit and typed coverage only. No claim document was on file."],
+      },
+      evidence: [],
+      message: null,
+    };
+  }
+  const extractClaim = ctx.extractClaim ?? extractClaimEvidence;
+  const evidence = [];
+  const unread = [];
+  for (const file of files.slice(0, 4)) {
+    try {
+      evidence.push({
+        filename: file.filename,
+        kind: file.kind,
+        extracted: await extractClaim({
+          filename: file.filename,
+          mimeType: file.mimeType,
+          bytes: file.bytes,
+          kind: file.kind,
+        }),
+      });
+    } catch (error) {
+      if (error instanceof HttpError && error.status === 503) throw error;
+      unread.push(file.filename);
+    }
+  }
+  if (files.length > 0 && evidence.length === 0) {
+    return {
+      ok: true,
+      persisted: false,
+      classification,
+      investigation: {
+        finding: "insufficient_information" as const,
+        explanations: [],
+        missingInformation: [
+          unread.length > 0
+            ? `The attached document could not be read: ${unread.join(", ")}.`
+            : "The attached document could not be read.",
+        ],
+        assumptions: ["No claim lines were extracted, so the plan was not compared."],
+      },
+      evidence: [],
+      message: null,
+    };
+  }
+  const investigate = ctx.investigateBilling ?? investigateBilling;
+  const investigation = await investigate({
+    request: input.request,
+    classification,
+    visit: visitContext,
+    evidence,
+    planPassages: await planPassagesForPatient(ctx, row.householdId, row.patientId),
+  });
+  if (unread.length > 0) {
+    investigation.missingInformation = [
+      ...investigation.missingInformation,
+      `These files could not be read: ${unread.join(", ")}.`,
+    ];
+  }
+  return { ok: true, persisted: false, classification, investigation, evidence, message: null };
+}
+
+function askRouteMessage(classification: IssueClassification) {
+  if (classification.route === "needs_confirmation") {
+    return "The classifier is not sure what this is about. Try a more specific question, such as “explain this charge” or “a payment is missing.”";
+  }
+  if (classification.route === "track") {
+    return "Correction tracking is not stored as a case yet. Ask about the charge or a missing payment if you want the records compared.";
+  }
+  return "This does not look like a charge to explain, a missing payment, or a correction to track.";
+}
+
+async function loadVisitDocumentFiles(ctx: AppContext, visitId: string) {
+  const links = await ctx.db.select().from(visitDocument).where(eq(visitDocument.visitId, visitId));
+  const files = [];
+  for (const link of links) {
+    const [file] = await ctx.db.select().from(uploadedDocument).where(eq(uploadedDocument.id, link.documentId)).limit(1);
+    if (!file) continue;
+    const stored = await ctx.storage.get(file.storagePath);
+    if (!stored) continue;
+    files.push({
+      filename: file.originalFilename,
+      kind: file.kind,
+      mimeType: file.mimeType,
+      bytes: stored.bytes,
+    });
+  }
+  return files;
+}
+
+async function planPassagesForPatient(ctx: AppContext, householdId: string, patientId: string) {
+  const records = await ctx.db.select().from(coverage).where(eq(coverage.householdId, householdId));
+  const passages: string[] = [];
+  for (const record of records) {
+    const links = await ctx.db.select().from(coveragePatient).where(eq(coveragePatient.coverageId, record.id));
+    if (links.length > 0 && !links.some((link) => link.patientId === patientId)) continue;
+    const benefits = readPlanBenefits(record.benefits);
+    const lines = [
+      [record.insurer, record.planName].filter(Boolean).join(" · ") || "Typed coverage record",
+      record.groupNumber ? `Group ID on file.` : null,
+      record.coverageStart ? `Coverage start ${record.coverageStart}.` : null,
+      moneyPassage("In-network individual deductible", benefits.deductible),
+      moneyPassage("In-network family deductible", benefits.innFamilyDeductible),
+      moneyPassage("Office visit copay", benefits.officeVisitCopay),
+      moneyPassage("Specialist copay", benefits.specialistCopay),
+      moneyPassage("Urgent care copay", benefits.urgentCareCopay),
+      moneyPassage("Emergency copay", benefits.emergencyCopay),
+      percentPassage("In-network coinsurance", benefits.coinsurance),
+      moneyPassage("In-network individual out-of-pocket max", benefits.outOfPocketMax),
+      moneyPassage("In-network family out-of-pocket max", benefits.innFamilyOutOfPocketMax),
+    ].filter((line): line is string => Boolean(line));
+    if (lines.length > 0) passages.push(lines.join(" "));
+  }
+  if (passages.length === 0) {
+    passages.push("No typed plan benefits are on file for this person.");
+  }
+  return passages;
+}
+
+function moneyPassage(label: string, field?: { state: string; amountUsd?: string } | null) {
+  if (!field || field.state !== "known" || !field.amountUsd) return null;
+  return `${label} $${field.amountUsd} (typed; in-network member cost).`;
+}
+
+function percentPassage(label: string, field?: { state: string; percent?: number } | null) {
+  if (!field || field.state !== "known" || typeof field.percent !== "number") return null;
+  return `${label} ${field.percent}% (typed; in-network).`;
 }
 
 export async function attachDocument(

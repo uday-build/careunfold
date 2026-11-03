@@ -374,6 +374,121 @@ export function VisitExtractForm({
   );
 }
 
+export function VisitAskForm({ visitId }: { visitId: string }) {
+  const [request, setRequest] = useState("");
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState("");
+  const [result, setResult] = useState<AskResult | null>(null);
+
+  return (
+    <form
+      className="stack"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        setPending(true);
+        setMessage("");
+        const response = await api<AskResult>(`/api/visits/${visitId}/ask`, {
+          method: "POST",
+          body: { request },
+        });
+        setPending(false);
+        if (!response.ok) {
+          setResult(null);
+          setMessage(response.data.error.message);
+          return;
+        }
+        setResult(response.data);
+      }}
+    >
+      <h2>Look into a charge</h2>
+      <p className="muted">Ask about a charge, a missing payment, or a correction. CareUnfold classifies the request, reads attached documents when needed, and compares them with typed plan details. Nothing is sent to an insurer, and the result is not saved on the visit.</p>
+      <TextArea id="visit-ask" label="What do you want to look into?" value={request} onChange={setRequest} required />
+      {pending ? <Notice tone="info" title="Looking into this">This can take a little while. Nothing is saved yet.</Notice> : null}
+      {message ? <p className="form-error" role="alert">Error: {message}</p> : null}
+      {result ? <AskResultView result={result} /> : null}
+      <button className="primary" type="submit" disabled={pending || !request.trim()}>{pending ? "Looking" : "Look into this"}</button>
+    </form>
+  );
+}
+
+function AskResultView({ result }: { result: AskResult }) {
+  const issue = ISSUE_LABELS[result.classification.issue] ?? result.classification.issue;
+  return (
+    <div className="stack">
+      <Notice tone={result.classification.uncertain ? "pending" : "info"} title={issue}>
+        {result.classification.uncertain
+          ? "The classifier is not sure enough to route this automatically."
+          : `Confidence ${Math.round(result.classification.confidence * 100)}%.`}
+      </Notice>
+      {result.message ? <p>{result.message}</p> : null}
+      {result.investigation ? (
+        <>
+          <p><strong>{FINDING_LABELS[result.investigation.finding]}</strong></p>
+          {result.investigation.explanations.length > 0 ? (
+            <>
+              <p>Possible explanations</p>
+              <ul className="list">
+                {result.investigation.explanations.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+          {result.investigation.missingInformation.length > 0 ? (
+            <>
+              <p>Missing information</p>
+              <ul className="list">
+                {result.investigation.missingInformation.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+          {result.investigation.assumptions.length > 0 ? (
+            <>
+              <p>Assumptions</p>
+              <ul className="list">
+                {result.investigation.assumptions.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+const ISSUE_LABELS: Record<string, string> = {
+  explain_charge: "Explain this charge",
+  payment_missing: "Payment missing",
+  track_correction: "Track a correction",
+  other: "Something else",
+};
+
+const FINDING_LABELS: Record<string, string> = {
+  matches_available_records: "Matches the records on file",
+  possible_discrepancy: "Possible discrepancy",
+  insufficient_information: "Not enough information",
+};
+
+type AskResult = {
+  classification: {
+    issue: string;
+    confidence: number;
+    uncertain: boolean;
+    route: string;
+  };
+  investigation: {
+    finding: string;
+    explanations: string[];
+    missingInformation: string[];
+    assumptions: string[];
+  } | null;
+  message: string | null;
+};
+
 function matchingClinician(provider: string, clinicians: VisitClinician[]) {
   const needle = provider.trim().toLowerCase();
   if (!needle) return null;

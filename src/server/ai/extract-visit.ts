@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { HttpError } from "../http/errors";
 import { allergyRowSchema, medicationRowSchema } from "../domain/validation";
+import {
+  extractionConfigured,
+  fileContentPart,
+  openRouterChat,
+  openRouterConfigured,
+  openRouterModels,
+  openRouterPrivacy,
+  parseJsonObject,
+} from "./openrouter";
 
 export const extractedVisitSchema = z.object({
   patientName: z.string().trim().nullable(),
@@ -26,8 +35,13 @@ export type VisitExtractRequest = {
   clinicians: Array<{ displayName: string; role: string }>;
 };
 
+export async function extractVisitFields(input: VisitExtractRequest): Promise<ExtractedVisitFields> {
+  if (openRouterConfigured()) return extractVisitWithOpenRouter(input);
+  return extractVisitWithGateway(input);
+}
+
 export async function extractVisitWithGateway(input: VisitExtractRequest): Promise<ExtractedVisitFields> {
-  if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
+  if (!extractionConfigured()) {
     throw new HttpError(
       503,
       "extract_unconfigured",
@@ -39,17 +53,7 @@ export async function extractVisitWithGateway(input: VisitExtractRequest): Promi
     const result = await generateText({
       model: process.env.AI_VISIT_MODEL?.trim() || "google/gemini-3.8-flash",
       output: Output.object({ schema: extractedVisitSchema }),
-      instructions: [
-        "Extract encounter details and pre-visit intake from a medical bill, explanation of benefits, receipt, after-visit summary, or similar care document.",
-        "Return the same fields a person would type: patient name, encounter date, start time, care provider name and role, encounter modality, chief complaint in the patient's words, allergies with reaction severity, and current medications with dosages.",
-        "Use null or empty arrays when a field is not clearly present. Do not invent a patient name, date, time, provider, modality, chief complaint, allergy, or medication.",
-        "Dates must be YYYY-MM-DD. Times must be HH:MM in 24-hour time.",
-        "Provider role must be physician, nurse, therapist, or other.",
-        "Modality must be in_person_outpatient, telehealth_video, phone, or home_visit.",
-        "Allergy severity must be mild, moderate, or anaphylactic.",
-        "Medication kind must be prescription or supplement.",
-        householdContext(input),
-      ].join(" "),
+      instructions: visitInstructions(input),
       messages: [
         {
           role: "user",
@@ -78,6 +82,59 @@ export async function extractVisitWithGateway(input: VisitExtractRequest): Promi
   }
 }
 
+async function extractVisitWithOpenRouter(input: VisitExtractRequest): Promise<ExtractedVisitFields> {
+  try {
+    const { text } = await openRouterChat({
+      model: openRouterModels().extract,
+      provider: { ...openRouterPrivacy, only: ["google"] },
+      plugins: input.mimeType === "application/pdf" ? [{ id: "file-parser", pdf: { engine: "native" } }] : undefined,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "visit_extraction",
+          strict: true,
+          schema: visitJsonSchema,
+        },
+      },
+      messages: [
+        { role: "system", content: visitInstructions(input) },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Extract the visit fields from this document. Leave a field null rather than guessing. The user will review and edit every value before anything is saved.",
+            },
+            fileContentPart(input.filename, input.mimeType, input.bytes),
+          ],
+        },
+      ],
+    });
+    const parsed = extractedVisitSchema.safeParse(parseJsonObject(text));
+    if (!parsed.success) {
+      throw new HttpError(502, "extract_failed", "The document could not be read. Nothing was saved. You can enter the visit by hand.");
+    }
+    return parsed.data;
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    throw new HttpError(502, "extract_failed", "The document could not be read. Nothing was saved. You can enter the visit by hand.");
+  }
+}
+
+function visitInstructions(input: VisitExtractRequest) {
+  return [
+    "Extract encounter details and pre-visit intake from a medical bill, explanation of benefits, receipt, after-visit summary, or similar care document.",
+    "Return the same fields a person would type: patient name, encounter date, start time, care provider name and role, encounter modality, chief complaint in the patient's words, allergies with reaction severity, and current medications with dosages.",
+    "Use null or empty arrays when a field is not clearly present. Do not invent a patient name, date, time, provider, modality, chief complaint, allergy, or medication.",
+    "Dates must be YYYY-MM-DD. Times must be HH:MM in 24-hour time.",
+    "Provider role must be physician, nurse, therapist, or other.",
+    "Modality must be in_person_outpatient, telehealth_video, phone, or home_visit.",
+    "Allergy severity must be mild, moderate, or anaphylactic.",
+    "Medication kind must be prescription or supplement.",
+    householdContext(input),
+  ].join(" ");
+}
+
 function householdContext(input: VisitExtractRequest) {
   const people = input.patients.map((person) => `${person.givenName} ${person.familyName}`.trim()).filter(Boolean);
   const clinicians = input.clinicians.map((person) => `${person.displayName} (${person.role})`.trim()).filter(Boolean);
@@ -90,3 +147,60 @@ function householdContext(input: VisitExtractRequest) {
   }
   return parts.join(" ");
 }
+
+const visitJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "patientName",
+    "visitDate",
+    "startTime",
+    "provider",
+    "providerRole",
+    "modality",
+    "location",
+    "reason",
+    "chiefComplaint",
+    "allergies",
+    "medications",
+  ],
+  properties: {
+    patientName: { type: ["string", "null"] },
+    visitDate: { type: ["string", "null"] },
+    startTime: { type: ["string", "null"] },
+    provider: { type: ["string", "null"] },
+    providerRole: { type: ["string", "null"], enum: ["physician", "nurse", "therapist", "other", null] },
+    modality: {
+      type: ["string", "null"],
+      enum: ["in_person_outpatient", "telehealth_video", "phone", "home_visit", null],
+    },
+    location: { type: ["string", "null"] },
+    reason: { type: ["string", "null"] },
+    chiefComplaint: { type: ["string", "null"] },
+    allergies: {
+      type: ["array", "null"],
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["substance", "severity"],
+        properties: {
+          substance: { type: "string" },
+          severity: { type: "string", enum: ["mild", "moderate", "anaphylactic"] },
+        },
+      },
+    },
+    medications: {
+      type: ["array", "null"],
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "dosage", "kind"],
+        properties: {
+          name: { type: "string" },
+          dosage: { type: ["string", "null"] },
+          kind: { type: "string", enum: ["prescription", "supplement"] },
+        },
+      },
+    },
+  },
+};

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DocumentUploadForm } from "@/components/app-actions";
+import { VisitAskForm } from "@/components/visit-forms";
 import { Notice } from "@/components/shell";
 import { loadApp } from "../../../load";
 import { getContext } from "@/server/context";
@@ -84,6 +85,9 @@ export default async function VisitPage({ params }: { params: Promise<{ visitId:
           {view.canUpload ? <DocumentUploadForm visitId={view.visit.id} storageConfigured={view.storageConfigured} /> : (
             <p className="muted">This account can view the visit but cannot add documents.</p>
           )}
+        </section>
+        <section className="card stack">
+          <VisitAskForm visitId={view.visit.id} />
         </section>
       </section>
     );

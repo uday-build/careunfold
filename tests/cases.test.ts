@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createUnconfiguredFileStore } from "@/server/storage/files";
 import type { AppContext } from "@/server/domain/service";
+import { HttpError } from "@/server/http/errors";
 import { dispatch } from "@/server/http/router";
 import {
   adultPatient,
@@ -24,6 +25,9 @@ beforeAll(async () => {
     BETTER_AUTH_URL: origin,
     EMAIL_DELIVERY: "memory",
   });
+  delete process.env.OPENROUTER_API_KEY;
+  delete process.env.AI_GATEWAY_API_KEY;
+  delete process.env.VERCEL_OIDC_TOKEN;
   const harness = await createTestContext();
   ctx = harness.ctx;
   closeDatabase = harness.close;
@@ -32,6 +36,9 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetData(ctx);
   ctx.extractVisit = undefined;
+  ctx.classifyIssue = undefined;
+  ctx.extractClaim = undefined;
+  ctx.investigateBilling = undefined;
 });
 
 afterAll(async () => {
@@ -296,5 +303,165 @@ describe("visits and documents", () => {
     expect((await extracted.json()).error.code).toBe("extract_unconfigured");
     const listed = await api(ctx, "/api/visits", { cookie: account.cookie });
     expect(listed.data.visits).toEqual([]);
+  });
+
+  it("does not look into a charge when classification is not configured", async () => {
+    const account = await completeSelf("visits-ask-noai@example.com");
+    const created = await api(ctx, "/api/visits", {
+      method: "POST",
+      cookie: account.cookie,
+      idempotencyKey: "visit-ask-noai",
+      body: { patientId: account.patientId, visitDate: "2026-10-02" },
+    });
+    const asked = await api(ctx, `/api/visits/${created.data.visit.id}/ask`, {
+      method: "POST",
+      cookie: account.cookie,
+      body: { request: "Explain this charge." },
+    });
+    expect(asked.status).toBe(503);
+    expect(asked.data.error.code).toBe("openrouter_unconfigured");
+  });
+
+  it("classifies a billing question without saving, and skips investigation when uncertain", async () => {
+    const account = await completeSelf("visits-ask-uncertain@example.com");
+    const created = await api(ctx, "/api/visits", {
+      method: "POST",
+      cookie: account.cookie,
+      idempotencyKey: "visit-ask-uncertain",
+      body: { patientId: account.patientId, visitDate: "2026-10-02", provider: "Harbor Clinic" },
+    });
+    let investigated = false;
+    ctx.classifyIssue = async () => ({
+      issue: "explain_charge",
+      confidence: 0.41,
+      probabilities: { explain_charge: 0.4, payment_missing: 0.3, track_correction: 0.2, other: 0.1 },
+      needsDocument: 0.9,
+      uncertain: true,
+      route: "needs_confirmation",
+    });
+    ctx.investigateBilling = async () => {
+      investigated = true;
+      return { finding: "possible_discrepancy", explanations: ["Should not run"], missingInformation: [], assumptions: [] };
+    };
+    const asked = await api(ctx, `/api/visits/${created.data.visit.id}/ask`, {
+      method: "POST",
+      cookie: account.cookie,
+      body: { request: "Something looks off on this bill." },
+    });
+    expect(asked.status).toBe(200);
+    expect(asked.data.persisted).toBe(false);
+    expect(asked.data.classification.route).toBe("needs_confirmation");
+    expect(asked.data.investigation).toBeNull();
+    expect(investigated).toBe(false);
+  });
+
+  it("extracts claim evidence and compares it with typed coverage without saving", async () => {
+    const account = await completeSelf("visits-ask-investigate@example.com");
+    const created = await api(ctx, "/api/visits", {
+      method: "POST",
+      cookie: account.cookie,
+      idempotencyKey: "visit-ask-investigate",
+      body: { patientId: account.patientId, visitDate: "2026-10-02", provider: "Harbor Clinic" },
+    });
+    const form = new FormData();
+    form.set("kind", "eob");
+    form.set("file", new File([new Uint8Array([37, 80, 68, 70, 45, 49, 46, 52])], "harbor-eob.pdf", { type: "application/pdf" }));
+    await dispatch(
+      new Request(`${origin}/api/visits/${created.data.visit.id}/documents`, {
+        method: "POST",
+        headers: { origin, cookie: account.cookie },
+        body: form,
+      }),
+      ctx,
+    );
+    let seenRequest = "";
+    ctx.classifyIssue = async (input) => {
+      seenRequest = input.request;
+      return {
+        issue: "explain_charge",
+        confidence: 0.96,
+        probabilities: { explain_charge: 0.96, payment_missing: 0.02, track_correction: 0.01, other: 0.01 },
+        needsDocument: 0.91,
+        uncertain: false,
+        route: "investigate",
+      };
+    };
+    ctx.extractClaim = async () => ({
+      patientName: "Avery Quinn",
+      providerName: "Harbor Clinic",
+      visitDate: "2026-10-02",
+      claimNumber: "CL-100",
+      accountNumber: null,
+      documentKind: "eob",
+      serviceLines: [{ description: "Office visit", serviceDate: "2026-10-02", billedAmountUsd: "180.00", allowedAmountUsd: "120.00", planPaidUsd: "80.00", memberResponsibilityUsd: "40.00" }],
+      totals: { billedAmountUsd: "180.00", planPaidUsd: "80.00", memberResponsibilityUsd: "40.00" },
+    });
+    ctx.investigateBilling = async (input) => {
+      expect(input.evidence[0]?.extracted.claimNumber).toBe("CL-100");
+      expect(input.planPassages.length).toBeGreaterThan(0);
+      return {
+        finding: "possible_discrepancy",
+        explanations: ["The EOB assigns $40 member responsibility. Confirm whether that matches the office visit copay on file."],
+        missingInformation: ["No payment record is attached to this visit."],
+        assumptions: ["The EOB is treated as applicable until a later adjustment is on file."],
+      };
+    };
+    const asked = await api(ctx, `/api/visits/${created.data.visit.id}/ask`, {
+      method: "POST",
+      cookie: account.cookie,
+      body: { request: "Explain this $40 charge." },
+    });
+    expect(asked.status).toBe(200);
+    expect(seenRequest).toBe("Explain this $40 charge.");
+    expect(asked.data.persisted).toBe(false);
+    expect(asked.data.investigation.finding).toBe("possible_discrepancy");
+    expect(asked.data.evidence[0].extracted.totals.memberResponsibilityUsd).toBe("40.00");
+  });
+
+  it("does not invent claim lines when an attached document cannot be read", async () => {
+    const account = await completeSelf("visits-ask-unread@example.com");
+    const created = await api(ctx, "/api/visits", {
+      method: "POST",
+      cookie: account.cookie,
+      idempotencyKey: "visit-ask-unread",
+      body: { patientId: account.patientId, visitDate: "2026-10-02", provider: "Harbor Clinic" },
+    });
+    const form = new FormData();
+    form.set("kind", "bill");
+    form.set("file", new File([new Uint8Array([37, 80, 68, 70])], "blurry.pdf", { type: "application/pdf" }));
+    await dispatch(
+      new Request(`${origin}/api/visits/${created.data.visit.id}/documents`, {
+        method: "POST",
+        headers: { origin, cookie: account.cookie },
+        body: form,
+      }),
+      ctx,
+    );
+    let investigated = false;
+    ctx.classifyIssue = async () => ({
+      issue: "explain_charge",
+      confidence: 0.94,
+      probabilities: { explain_charge: 0.94, payment_missing: 0.03, track_correction: 0.02, other: 0.01 },
+      needsDocument: 0.88,
+      uncertain: false,
+      route: "investigate",
+    });
+    ctx.extractClaim = async () => {
+      throw new HttpError(502, "extract_failed", "The document could not be read. Nothing was saved.");
+    };
+    ctx.investigateBilling = async () => {
+      investigated = true;
+      return { finding: "possible_discrepancy", explanations: ["Should not run"], missingInformation: [], assumptions: [] };
+    };
+    const asked = await api(ctx, `/api/visits/${created.data.visit.id}/ask`, {
+      method: "POST",
+      cookie: account.cookie,
+      body: { request: "Explain this charge." },
+    });
+    expect(asked.status).toBe(200);
+    expect(asked.data.persisted).toBe(false);
+    expect(asked.data.investigation.finding).toBe("insufficient_information");
+    expect(asked.data.investigation.missingInformation[0]).toContain("blurry.pdf");
+    expect(investigated).toBe(false);
   });
 });

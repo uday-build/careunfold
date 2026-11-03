@@ -3,6 +3,7 @@ import type { AppContext } from "../domain/service";
 import {
   acceptInvitation,
   addHouseholdMember,
+  askAboutVisit,
   attachDocument,
   cancelInvitation,
   completeReview,
@@ -187,6 +188,10 @@ async function route(request: Request, ctx: AppContext, path: string, actor: Act
   if (request.method === "POST" && (path === "/api/visits" || path === "/api/cases")) {
     const result = await createVisit(ctx, requireActor(actor), await readJson(request), idempotencyKey(request));
     return json(result.status, result.body);
+  }
+  const visitAsk = path.match(/^\/api\/(?:visits|cases)\/([^/]+)\/ask$/);
+  if (visitAsk && request.method === "POST") {
+    return json(200, await askAboutVisit(ctx, requireActor(actor), visitAsk[1], await readJson(request)));
   }
   const visitDocuments = path.match(/^\/api\/(?:visits|cases)\/([^/]+)\/documents$/);
   if (visitDocuments && request.method === "POST") {
