@@ -43,6 +43,13 @@
       "when": 1762200000000,
       "tag": "0005_coverage_id_card",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1762761600000,
+      "tag": "0006_rls_lock_public_tables",
+      "breakpoints": true
     }
   ]
 }
