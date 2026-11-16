@@ -54,7 +54,7 @@ export async function classifyBillingIssue(input: ClassifyIssueRequest): Promise
   return classificationFromDecision(data);
 }
 
-function classificationFromDecision(data: Record<string, unknown>): IssueClassification {
+export function classificationFromDecision(data: Record<string, unknown>): IssueClassification {
   const answers = data.answers;
   if (!answers || typeof answers !== "object") {
     throw new HttpError(502, "classify_failed", "The request could not be classified. Nothing was saved.");
