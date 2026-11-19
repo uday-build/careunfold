@@ -265,7 +265,17 @@ export const visitInputSchema = z.object({
   medications: z.array(medicationRowSchema).max(40).optional().default([]),
 });
 
-export const documentKindSchema = z.enum(["bill", "eob", "receipt", "other"]);
+export const DOCUMENT_KINDS = [
+  { value: "bill", label: "Bill" },
+  { value: "adjusted_bill", label: "Adjusted bill" },
+  { value: "eob", label: "Explanation of benefits" },
+  { value: "receipt", label: "Receipt" },
+  { value: "other", label: "Other" },
+] as const;
+
+export type DocumentKind = (typeof DOCUMENT_KINDS)[number]["value"];
+
+export const documentKindSchema = z.enum(DOCUMENT_KINDS.map((item) => item.value) as [DocumentKind, ...DocumentKind[]]);
 
 export const visitAskSchema = z.object({
   request: z

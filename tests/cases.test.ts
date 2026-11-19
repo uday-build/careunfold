@@ -154,6 +154,87 @@ describe("visits and documents", () => {
     expect(Array.from(saved)).toEqual(Array.from(bytes));
   });
 
+  it("stores multiple bills and an adjusted bill on the same visit", async () => {
+    const account = await completeSelf("cases-multibill@example.com");
+    const created = await api(ctx, "/api/visits", {
+      method: "POST",
+      cookie: account.cookie,
+      idempotencyKey: "visit-multibill",
+      body: { patientId: account.patientId, visitDate: "2026-10-03", provider: "Harbor Clinic" },
+    });
+    const bills = new FormData();
+    bills.set("kind", "bill");
+    bills.append("file", new File([new Uint8Array([37, 80, 68, 70, 45, 49])], "harbor-professional.pdf", { type: "application/pdf" }));
+    bills.append("file", new File([new Uint8Array([37, 80, 68, 70, 45, 50])], "harbor-facility.pdf", { type: "application/pdf" }));
+    const uploadedBills = await dispatch(
+      new Request(`${origin}/api/visits/${created.data.visit.id}/documents`, {
+        method: "POST",
+        headers: { origin, cookie: account.cookie },
+        body: bills,
+      }),
+      ctx,
+    );
+    expect(uploadedBills.status).toBe(201);
+    const billBody = await uploadedBills.json();
+    expect(billBody.documents).toHaveLength(2);
+    const adjusted = new FormData();
+    adjusted.set("kind", "adjusted_bill");
+    adjusted.append("file", new File([new Uint8Array([37, 80, 68, 70, 45, 51])], "harbor-professional-adjusted.pdf", { type: "application/pdf" }));
+    const uploadedAdjusted = await dispatch(
+      new Request(`${origin}/api/visits/${created.data.visit.id}/documents`, {
+        method: "POST",
+        headers: { origin, cookie: account.cookie },
+        body: adjusted,
+      }),
+      ctx,
+    );
+    expect(uploadedAdjusted.status).toBe(201);
+    const opened = await api(ctx, `/api/visits/${created.data.visit.id}`, { cookie: account.cookie });
+    expect(opened.data.documents.map((file: { kind: string; filename: string }) => `${file.kind}:${file.filename}`)).toEqual([
+      "bill:harbor-professional.pdf",
+      "bill:harbor-facility.pdf",
+      "adjusted_bill:harbor-professional-adjusted.pdf",
+    ]);
+  });
+
+  it("does not create a second document when the same file is uploaded again", async () => {
+    const account = await completeSelf("cases-dupbill@example.com");
+    const created = await api(ctx, "/api/visits", {
+      method: "POST",
+      cookie: account.cookie,
+      idempotencyKey: "visit-dupbill",
+      body: { patientId: account.patientId, visitDate: "2026-10-03" },
+    });
+    const bytes = new Uint8Array([37, 80, 68, 70, 45, 57]);
+    const first = new FormData();
+    first.set("kind", "bill");
+    first.set("file", new File([bytes], "harbor-bill.pdf", { type: "application/pdf" }));
+    const uploaded = await dispatch(
+      new Request(`${origin}/api/visits/${created.data.visit.id}/documents`, {
+        method: "POST",
+        headers: { origin, cookie: account.cookie },
+        body: first,
+      }),
+      ctx,
+    );
+    const firstBody = await uploaded.json();
+    const again = new FormData();
+    again.set("kind", "adjusted_bill");
+    again.set("file", new File([bytes], "harbor-bill-again.pdf", { type: "application/pdf" }));
+    const duplicate = await dispatch(
+      new Request(`${origin}/api/visits/${created.data.visit.id}/documents`, {
+        method: "POST",
+        headers: { origin, cookie: account.cookie },
+        body: again,
+      }),
+      ctx,
+    );
+    const duplicateBody = await duplicate.json();
+    expect(duplicateBody.document.id).toBe(firstBody.document.id);
+    const opened = await api(ctx, `/api/visits/${created.data.visit.id}`, { cookie: account.cookie });
+    expect(opened.data.documents).toHaveLength(1);
+  });
+
   it("does not let household administration stand in for record access", async () => {
     const caregiver = await register(ctx, "cases-caregiver@example.com");
     await saveProfile(ctx, caregiver.cookie, "Casey Quinn", "someone_else");

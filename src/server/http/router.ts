@@ -4,7 +4,7 @@ import {
   acceptInvitation,
   addHouseholdMember,
   askAboutVisit,
-  attachDocument,
+  attachDocuments,
   cancelInvitation,
   completeReview,
   createPrivacyRequest,
@@ -196,18 +196,23 @@ async function route(request: Request, ctx: AppContext, path: string, actor: Act
   const visitDocuments = path.match(/^\/api\/(?:visits|cases)\/([^/]+)\/documents$/);
   if (visitDocuments && request.method === "POST") {
     const form = await request.formData();
-    const uploaded = form.get("file");
-    if (!(uploaded instanceof File)) {
+    const uploaded = form.getAll("file").filter((item): item is File => item instanceof File);
+    if (uploaded.length === 0) {
       throw new HttpError(422, "empty_file", "Choose a file to upload.");
     }
-    const bytes = new Uint8Array(await uploaded.arrayBuffer());
+    const files = [];
+    for (const file of uploaded) {
+      files.push({
+        filename: file.name,
+        mimeType: file.type || "application/octet-stream",
+        bytes: new Uint8Array(await file.arrayBuffer()),
+      });
+    }
     return json(
       201,
-      await attachDocument(ctx, requireActor(actor), visitDocuments[1], {
+      await attachDocuments(ctx, requireActor(actor), visitDocuments[1], {
         kind: form.get("kind"),
-        filename: uploaded.name,
-        mimeType: uploaded.type || "application/octet-stream",
-        bytes,
+        files,
       }),
     );
   }

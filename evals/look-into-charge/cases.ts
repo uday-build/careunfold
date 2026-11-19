@@ -5,7 +5,7 @@ import { canonicalBalances } from "./score";
 
 export type ClaimDocumentFixture = {
   filename: string;
-  kind: "bill" | "eob" | "receipt" | "other";
+  kind: "bill" | "adjusted_bill" | "eob" | "receipt" | "other";
   sourceText: string;
   extracted: ExtractedClaimFields | "unreadable";
 };

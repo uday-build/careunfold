@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { Notice, TextArea, TextField } from "@/components/shell";
 import {
   ALLERGY_SEVERITIES,
+  DOCUMENT_KINDS,
   ENCOUNTER_MODALITIES,
   MEDICATION_KINDS,
   PROVIDER_ROLES,
@@ -41,7 +42,7 @@ export function VisitStartChoices() {
       </Link>
       <Link className="choice" href="/app/visits/new/extract">
         <strong>Fill from a document</strong>
-        <div className="muted">Upload a bill, explanation, or receipt. CareUnfold drafts the same fields. Nothing is saved until you confirm.</div>
+        <div className="muted">Upload one or more bills, an adjusted bill, or an explanation. CareUnfold drafts the same fields. Nothing is saved until you confirm.</div>
       </Link>
     </div>
   );
@@ -53,7 +54,7 @@ export function VisitForm({
   initial,
   warnings = [],
   extracted,
-  pendingFile,
+  pendingFiles = [],
   documentKind,
   storageConfigured = false,
 }: {
@@ -62,7 +63,7 @@ export function VisitForm({
   initial?: Partial<VisitDraft>;
   warnings?: string[];
   extracted?: boolean;
-  pendingFile?: File | null;
+  pendingFiles?: File[];
   documentKind?: string;
   storageConfigured?: boolean;
 }) {
@@ -111,10 +112,10 @@ export function VisitForm({
           setMessage(result.data.error.message);
           return;
         }
-        if (pendingFile && storageConfigured) {
+        if (pendingFiles.length > 0 && storageConfigured) {
           const form = new FormData();
           form.set("kind", documentKind || "bill");
-          form.set("file", pendingFile);
+          for (const file of pendingFiles) form.append("file", file);
           try {
             await fetch(`/api/visits/${result.data.visit.id}/documents`, {
               method: "POST",
@@ -122,7 +123,7 @@ export function VisitForm({
               credentials: "same-origin",
             });
           } catch {
-            // The visit is already saved. The document can be added from the visit page.
+            // The visit is already saved. More documents can be added from the visit page.
           }
         }
         router.push(`/app/visits/${result.data.visit.id}`);
@@ -131,6 +132,9 @@ export function VisitForm({
       {extracted ? (
         <Notice tone="info" title="Drafted from the document">
           These fields are not saved yet. Change anything that is wrong, then save.
+          {pendingFiles.length > 0
+            ? ` ${pendingFiles.length === 1 ? "This file" : "These files"} will be stored with the visit: ${pendingFiles.map((file) => file.name).join(", ")}.`
+            : ""}
         </Notice>
       ) : null}
       {warnings.map((warning) => (
@@ -280,7 +284,7 @@ export function VisitExtractForm({
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const [kind, setKind] = useState("bill");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [draft, setDraft] = useState<(VisitDraft & { warnings: string[] }) | null>(null);
 
   if (draft) {
@@ -297,12 +301,12 @@ export function VisitExtractForm({
           initial={draft}
           warnings={draft.warnings}
           extracted
-          pendingFile={file}
+          pendingFiles={files}
           documentKind={kind}
           storageConfigured={storageConfigured}
         />
         <button className="secondary" type="button" onClick={() => { setDraft(null); setMessage(""); }}>
-          Choose a different document
+          Choose different documents
         </button>
       </div>
     );
@@ -313,15 +317,18 @@ export function VisitExtractForm({
       className="stack"
       onSubmit={async (event) => {
         event.preventDefault();
-        const uploaded = file ?? (event.currentTarget.elements.namedItem("file") as HTMLInputElement | null)?.files?.[0];
-        if (!uploaded) {
+        const selected = files.length > 0
+          ? files
+          : Array.from((event.currentTarget.elements.namedItem("file") as HTMLInputElement | null)?.files ?? []);
+        const primary = selected[0];
+        if (!primary) {
           setMessage("Choose a file to upload.");
           return;
         }
         setPending(true);
         setMessage("");
         const body = new FormData();
-        body.set("file", uploaded);
+        body.set("file", primary);
         let response: Response;
         try {
           response = await fetch("/api/visits/extract", { method: "POST", body, credentials: "same-origin" });
@@ -339,32 +346,33 @@ export function VisitExtractForm({
           setMessage(data.error?.message ?? "The document could not be read. Nothing was saved.");
           return;
         }
-        setFile(uploaded);
+        setFiles(selected);
         setDraft(data.draft);
       }}
     >
       <p><Link href="/app/visits/new">Back to add a visit</Link></p>
       <p className="eyebrow">New visit · From a document</p>
-      <h1>Upload a document</h1>
-      <p className="lede">CareUnfold reads the file and fills the same encounter and intake fields you would type by hand. You review and edit them next. Nothing is stored until you confirm.</p>
+      <h1>Upload documents</h1>
+      <p className="lede">CareUnfold reads the first file and fills the same encounter and intake fields you would type by hand. Additional bills stay queued and are stored when you confirm. You can add adjusted bills after the visit is saved.</p>
       {pending ? <Notice tone="info" title="Reading the document">This can take a few seconds. The visit is not saved yet.</Notice> : null}
       <label htmlFor="extract-kind">Document type</label>
       <select id="extract-kind" value={kind} onChange={(event) => setKind(event.target.value)}>
-        <option value="bill">Bill</option>
-        <option value="eob">Explanation of benefits</option>
-        <option value="receipt">Receipt</option>
-        <option value="other">Other</option>
+        {DOCUMENT_KINDS.map((item) => (
+          <option key={item.value} value={item.value}>{item.label}</option>
+        ))}
       </select>
-      <label htmlFor="extract-file">File (PDF or image, 4 MB or smaller)</label>
+      <label htmlFor="extract-file">Files (PDF or image, 4 MB or smaller each)</label>
       <input
         id="extract-file"
         name="file"
         type="file"
         accept="application/pdf,image/jpeg,image/png,image/webp"
+        multiple
         required
-        onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+        onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
       />
-      <p className="muted">Supported files: PDF, JPEG, PNG, or WebP. The drafted fields stay editable.</p>
+      <p className="muted">Supported files: PDF, JPEG, PNG, or WebP. The first file is read into the draft. Extra files of this type are stored with the visit after you confirm.</p>
+      {files.length > 1 ? <p role="status">{files.length} files selected. The first file is used to draft the visit.</p> : null}
       {message ? <p className="form-error" role="alert">Error: {message}</p> : null}
       <div className="actions">
         <button className="primary" type="submit" disabled={pending || patients.length === 0}>{pending ? "Reading" : "Read document"}</button>
@@ -401,7 +409,7 @@ export function VisitAskForm({ visitId }: { visitId: string }) {
       }}
     >
       <h2>Look into a charge</h2>
-      <p className="muted">Ask about a charge, a missing payment, or a correction. CareUnfold classifies the request, reads attached documents when needed, and compares them with typed plan details. Nothing is sent to an insurer, and the result is not saved on the visit.</p>
+      <p className="muted">Ask about a charge, a missing payment, or a correction. CareUnfold classifies the request, reads the bills and adjusted bills attached to this visit when needed, and compares them with typed plan details. Nothing is sent to an insurer, and the result is not saved on the visit.</p>
       <TextArea id="visit-ask" label="What do you want to look into?" value={request} onChange={setRequest} required />
       {pending ? <Notice tone="info" title="Looking into this">This can take a little while. Nothing is saved yet.</Notice> : null}
       {message ? <p className="form-error" role="alert">Error: {message}</p> : null}

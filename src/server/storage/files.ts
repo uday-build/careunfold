@@ -1,5 +1,7 @@
 export const VISIT_DOCUMENT_BUCKET = "visit-documents";
 export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+export const MAX_VISIT_FILES_PER_UPLOAD = 8;
+export const MAX_VISIT_EVIDENCE_FILES = 8;
 
 export const ALLOWED_DOCUMENT_TYPES: Record<string, string[]> = {
   "application/pdf": [".pdf"],

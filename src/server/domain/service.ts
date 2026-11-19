@@ -28,6 +28,8 @@ import { createToken, hashToken, listDevOutbox, type EmailSender } from "../emai
 import {
   ALLOWED_DOCUMENT_TYPES,
   MAX_UPLOAD_BYTES,
+  MAX_VISIT_EVIDENCE_FILES,
+  MAX_VISIT_FILES_PER_UPLOAD,
   VISIT_DOCUMENT_BUCKET,
   type FileStore,
 } from "../storage/files";
@@ -565,6 +567,7 @@ export async function getVisit(ctx: AppContext, actor: Actor, visitId: string) {
     const [file] = await ctx.db.select().from(uploadedDocument).where(eq(uploadedDocument.id, link.documentId)).limit(1);
     if (file) documents.push(documentSummary(file));
   }
+  documents.sort((left, right) => left.createdAt.localeCompare(right.createdAt));
   const write = await decidePatientAccess(ctx.db, actor, row.patientId, "records.write", ctx.now());
   return {
     ok: true,
@@ -611,7 +614,7 @@ export async function askAboutVisit(ctx: AppContext, actor: Actor, visitId: stri
       investigation: {
         finding: "insufficient_information" as const,
         explanations: [],
-        missingInformation: ["Upload a bill, explanation of benefits, or receipt for this visit."],
+        missingInformation: ["Upload a bill, adjusted bill, explanation of benefits, or receipt for this visit."],
         assumptions: ["This look-in used the visit and typed coverage only. No claim document was on file."],
       },
       evidence: [],
@@ -621,7 +624,7 @@ export async function askAboutVisit(ctx: AppContext, actor: Actor, visitId: stri
   const extractClaim = ctx.extractClaim ?? extractClaimEvidence;
   const evidence = [];
   const unread = [];
-  for (const file of files.slice(0, 4)) {
+  for (const file of files.slice(0, MAX_VISIT_EVIDENCE_FILES)) {
     try {
       evidence.push({
         filename: file.filename,
@@ -741,6 +744,26 @@ function percentPassage(label: string, field?: { state: string; percent?: number
   return `${label} ${field.percent}% (typed; in-network).`;
 }
 
+export async function attachDocuments(
+  ctx: AppContext,
+  actor: Actor,
+  visitId: string,
+  input: { kind: unknown; files: Array<{ filename: string; mimeType: string; bytes: Uint8Array }> },
+) {
+  if (input.files.length === 0) {
+    throw new HttpError(422, "empty_file", "Choose a file to upload.");
+  }
+  if (input.files.length > MAX_VISIT_FILES_PER_UPLOAD) {
+    throw new HttpError(422, "too_many_files", `Upload ${MAX_VISIT_FILES_PER_UPLOAD} files or fewer at a time.`);
+  }
+  const documents = [];
+  for (const file of input.files) {
+    const attached = await attachDocument(ctx, actor, visitId, { kind: input.kind, ...file });
+    documents.push(attached.document);
+  }
+  return { ok: true, document: documents[0], documents };
+}
+
 export async function attachDocument(
   ctx: AppContext,
   actor: Actor,
@@ -768,9 +791,25 @@ export async function attachDocument(
     throw new HttpError(422, "file_too_large", "Use a file of 4 MB or smaller.");
   }
   const filename = safeFilename(input.filename);
+  const checksumSha256 = createHash("sha256").update(input.bytes).digest("hex");
+  const [existing] = await ctx.db
+    .select({
+      id: uploadedDocument.id,
+      kind: uploadedDocument.kind,
+      originalFilename: uploadedDocument.originalFilename,
+      mimeType: uploadedDocument.mimeType,
+      byteSize: uploadedDocument.byteSize,
+      createdAt: uploadedDocument.createdAt,
+    })
+    .from(uploadedDocument)
+    .innerJoin(visitDocument, eq(visitDocument.documentId, uploadedDocument.id))
+    .where(and(eq(visitDocument.visitId, row.id), eq(uploadedDocument.checksumSha256, checksumSha256)))
+    .limit(1);
+  if (existing) {
+    return { ok: true, document: documentSummary(existing), duplicate: true };
+  }
   const id = randomUUID();
   const storagePath = `${row.patientId}/${row.id}/${id}/${filename}`;
-  const checksumSha256 = createHash("sha256").update(input.bytes).digest("hex");
   await ctx.storage.put(storagePath, input.bytes, mimeType);
   await ctx.db.insert(uploadedDocument).values({
     id,
@@ -801,7 +840,7 @@ export async function attachDocument(
     entityId: id,
   });
   const [stored] = await ctx.db.select().from(uploadedDocument).where(eq(uploadedDocument.id, id)).limit(1);
-  return { ok: true, document: stored ? documentSummary(stored) : { id } };
+  return { ok: true, document: stored ? documentSummary(stored) : { id }, duplicate: false };
 }
 
 export async function downloadDocument(ctx: AppContext, actor: Actor, documentId: string) {

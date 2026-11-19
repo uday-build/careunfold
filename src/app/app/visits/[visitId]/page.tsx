@@ -9,19 +9,13 @@ import { getVisit } from "@/server/domain/service";
 import { HttpError } from "@/server/http/errors";
 import {
   ALLERGY_SEVERITIES,
+  DOCUMENT_KINDS,
   ENCOUNTER_MODALITIES,
   MEDICATION_KINDS,
   PROVIDER_ROLES,
 } from "@/server/domain/validation";
 
 export const dynamic = "force-dynamic";
-
-const kindLabel: Record<string, string> = {
-  bill: "Bill",
-  eob: "Explanation of benefits",
-  receipt: "Receipt",
-  other: "Other",
-};
 
 export default async function VisitPage({ params }: { params: Promise<{ visitId: string }> }) {
   const { visitId } = await params;
@@ -70,17 +64,23 @@ export default async function VisitPage({ params }: { params: Promise<{ visitId:
         </section>
         <section className="card stack">
           <h2>Documents</h2>
+          <p className="muted">A visit can have more than one bill. Add later bills or adjusted bills from the provider here. Files stay private.</p>
           {view.documents.length === 0 ? (
-            <Notice tone="info" title="No documents yet">Upload a bill, explanation of benefits, or receipt for this visit. Files stay private.</Notice>
+            <Notice tone="info" title="No documents yet">Upload bills, adjusted bills, an explanation of benefits, or a receipt for this visit.</Notice>
           ) : (
-            <ul className="list">
-              {view.documents.map((file) => (
-                <li className="split" key={file.id}>
-                  <span>{kindLabel[file.kind] ?? file.kind} · {file.filename}</span>
-                  <a href={`/api/documents/${file.id}`}>Download</a>
-                </li>
-              ))}
-            </ul>
+            groupedDocuments(view.documents).map((group) => (
+              <div className="stack" key={group.value}>
+                <h3>{group.label}</h3>
+                <ul className="list">
+                  {group.files.map((file) => (
+                    <li className="split" key={file.id}>
+                      <span>{file.filename}</span>
+                      <a href={`/api/documents/${file.id}`}>Download</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
           )}
           {view.canUpload ? <DocumentUploadForm visitId={view.visit.id} storageConfigured={view.storageConfigured} /> : (
             <p className="muted">This account can view the visit but cannot add documents.</p>
@@ -111,4 +111,11 @@ function severityLabel(value: string) {
 
 function medicationKindLabel(value: string) {
   return MEDICATION_KINDS.find((item) => item.value === value)?.label ?? value;
+}
+
+function groupedDocuments(documents: Array<{ id: string; kind: string; filename: string }>) {
+  return DOCUMENT_KINDS.map((kind) => ({
+    ...kind,
+    files: documents.filter((file) => file.kind === kind.value),
+  })).filter((group) => group.files.length > 0);
 }

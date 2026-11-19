@@ -10,7 +10,7 @@ export const extractedClaimSchema = z.object({
   visitDate: z.string().trim().nullable(),
   claimNumber: z.string().trim().nullable(),
   accountNumber: z.string().trim().nullable(),
-  documentKind: z.enum(["bill", "eob", "receipt", "other"]).nullable(),
+  documentKind: z.enum(["bill", "adjusted_bill", "eob", "receipt", "other"]).nullable(),
   serviceLines: z
     .array(
       z.object({
@@ -58,7 +58,7 @@ export async function extractClaimEvidence(input: ClaimExtractRequest): Promise<
       {
         role: "system",
         content:
-          "Extract billing evidence from a medical bill, explanation of benefits, receipt, or similar claim document. Return patient name, provider, dates, claim or account references, service lines, and amounts. Use null or empty arrays when a field is not clearly present. Do not invent amounts, dates, names, or claim numbers. Dates must be YYYY-MM-DD. Money must be decimal strings such as 40.00.",
+          "Extract billing evidence from a medical bill, adjusted bill, explanation of benefits, receipt, or similar claim document. Return patient name, provider, dates, claim or account references, service lines, and amounts. Use null or empty arrays when a field is not clearly present. Do not invent amounts, dates, names, or claim numbers. Dates must be YYYY-MM-DD. Money must be decimal strings such as 40.00. If the document is a corrected or adjusted bill, set documentKind to adjusted_bill.",
       },
       {
         role: "user",
@@ -98,7 +98,7 @@ const claimJsonSchema = {
     visitDate: { type: ["string", "null"] },
     claimNumber: { type: ["string", "null"] },
     accountNumber: { type: ["string", "null"] },
-    documentKind: { type: ["string", "null"], enum: ["bill", "eob", "receipt", "other", null] },
+    documentKind: { type: ["string", "null"], enum: ["bill", "adjusted_bill", "eob", "receipt", "other", null] },
     serviceLines: {
       type: ["array", "null"],
       items: {

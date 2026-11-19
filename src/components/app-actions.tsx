@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { api } from "@/lib/api";
 import { TextField } from "@/components/shell";
+import { DOCUMENT_KINDS } from "@/server/domain/validation";
 
 export function InvitationActions({ invitation }: { invitation: { id: string; status: string } | null }) {
   const router = useRouter();
@@ -198,6 +199,7 @@ export function DocumentUploadForm({ visitId, storageConfigured }: { visitId: st
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  const [fileCount, setFileCount] = useState(0);
   if (!storageConfigured) {
     return <p className="muted">Visit details are saved. Document storage is not configured yet.</p>;
   }
@@ -221,27 +223,39 @@ export function DocumentUploadForm({ visitId, storageConfigured }: { visitId: st
           setMessage("We couldn't reach CareUnfold. Nothing was stored.");
           return;
         }
-        const data = (await response.json()) as { document?: { id: string }; error?: { message: string } };
+        const data = (await response.json()) as { documents?: Array<{ id: string }>; error?: { message: string } };
         setPending(false);
         if (!response.ok) {
-          setMessage(data.error?.message ?? "The document was not stored.");
+          setMessage(data.error?.message ?? "The documents were not stored.");
           return;
         }
         form.reset();
+        setFileCount(0);
         router.refresh();
       }}
     >
       <label htmlFor="kind">Document type</label>
       <select id="kind" name="kind" required defaultValue="bill">
-        <option value="bill">Bill</option>
-        <option value="eob">Explanation of benefits</option>
-        <option value="receipt">Receipt</option>
-        <option value="other">Other</option>
+        {DOCUMENT_KINDS.map((item) => (
+          <option key={item.value} value={item.value}>{item.label}</option>
+        ))}
       </select>
-      <label htmlFor="file">File (PDF or image, 4 MB or smaller)</label>
-      <input id="file" name="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required />
+      <label htmlFor="file">Files (PDF or image, 4 MB or smaller each)</label>
+      <input
+        id="file"
+        name="file"
+        type="file"
+        accept="application/pdf,image/jpeg,image/png,image/webp"
+        multiple
+        required
+        onChange={(event) => setFileCount(event.currentTarget.files?.length ?? 0)}
+      />
+      <p className="muted">Select more than one file of the same type, such as two facility bills. To add an adjusted bill, choose Adjusted bill and upload it separately.</p>
+      {fileCount > 1 ? <p role="status">{fileCount} files selected.</p> : null}
       {message ? <p role="status">{message}</p> : null}
-      <button className="primary" type="submit" disabled={pending}>{pending ? "Uploading" : "Upload"}</button>
+      <button className="primary" type="submit" disabled={pending}>
+        {pending ? "Uploading" : fileCount > 1 ? `Upload ${fileCount} files` : "Upload"}
+      </button>
     </form>
   );
 }
