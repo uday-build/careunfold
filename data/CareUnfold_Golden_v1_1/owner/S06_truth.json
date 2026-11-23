@@ -1,0 +1,321 @@
+{
+  "id": "S06",
+  "situation": 6,
+  "title": "Insurer payment not posted",
+  "user_prompt": "Insurer says it paid. Why does the provider still want money?",
+  "fit": "Ready as staged evidence",
+  "audit_notes": "Trace alone does not prove account allocation.",
+  "service_date": "2026-04-10",
+  "patient": "Taylor Rivera",
+  "dob": "1991-08-14",
+  "member_id": "SYN-M006",
+  "account_id": "SYN-A006",
+  "claim_id": "SYN-C006",
+  "coverage": [
+    {
+      "plan": "Harbor Health Medical",
+      "member_id": "SYN-M006",
+      "effective_start": "2026-01-01",
+      "effective_end": "2026-12-31",
+      "relationship": "self",
+      "subscriber": "same as patient",
+      "medical_only": true
+    }
+  ],
+  "policy": "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+  "documents": [
+    {
+      "id": "S06-D01",
+      "kind": "coverage",
+      "title": "Enrollment confirmation and benefit excerpt",
+      "issued": "2026-01-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C006",
+      "account_id": "SYN-A006",
+      "encounter_id": "S06-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Patient date of birth": "1991-08-14",
+        "Member ID": "SYN-M006"
+      },
+      "body": [
+        "Plan: Harbor Health Medical. Member: SYN-M006. Effective 2026-01-01 through 2026-12-31. Relationship: self. Medical coverage only.",
+        "SYNTHETIC PLAN TERMS - apply only to this test family.",
+        "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+        "The patient is the account holder."
+      ],
+      "lines": [],
+      "relative_path": "S06/release_A/S06-D01.pdf"
+    },
+    {
+      "id": "S06-D02",
+      "kind": "visit",
+      "title": "Visit record",
+      "issued": "2026-04-10",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C006",
+      "account_id": "SYN-A006",
+      "encounter_id": "S06-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Encounter at Cedar Medical. Services are listed in the claim documents. This note does not establish insurer adjudication."
+      ],
+      "lines": [],
+      "relative_path": "S06/release_A/S06-D02.pdf"
+    },
+    {
+      "id": "S06-D03",
+      "kind": "eob",
+      "title": "Explanation of benefits",
+      "issued": "2026-04-24",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C006",
+      "account_id": "SYN-A006",
+      "encounter_id": "S06-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "THIS IS NOT A BILL. Patient payments made to the provider are not deducted from EOB responsibility.",
+        "Amounts not assigned to the patient remain subject to provider/plan reconciliation; this document is not evidence that the provider posted payment."
+      ],
+      "lines": [
+        {
+          "code": "PROC",
+          "description": "Outpatient procedure",
+          "provider": "Cedar Medical",
+          "billed_cents": 100000,
+          "allowed_cents": 68000,
+          "plan_paid_cents": 68000,
+          "patient_responsibility_cents": 0,
+          "deductible_cents": 0,
+          "copay_cents": 0,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 0,
+          "reason": "Processed under service-date plan",
+          "line_id": "SYN-C006-L1"
+        }
+      ],
+      "relative_path": "S06/release_A/S06-D03.pdf"
+    },
+    {
+      "id": "S06-D04",
+      "kind": "bill",
+      "title": "Patient account statement",
+      "issued": "2026-05-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C006",
+      "account_id": "SYN-A006",
+      "encounter_id": "S06-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 100000,
+        "Posted adjustments": 32000,
+        "Posted insurer payments": 0,
+        "Posted patient payments": 0,
+        "Statement balance": 68000,
+        "Statement date": "2026-05-01",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S06/release_A/S06-D04.pdf"
+    },
+    {
+      "id": "S06-D05",
+      "kind": "remittance",
+      "title": "Insurer payment trace",
+      "issued": "2026-04-25",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C006",
+      "account_id": "SYN-A006",
+      "encounter_id": "S06-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Payment amount": 68000,
+        "Trace": "SYN-TRACE-006"
+      },
+      "body": [
+        "Payee Cedar Medical; account and claim allocation not supplied."
+      ],
+      "lines": [],
+      "relative_path": "S06/release_A/S06-D05.pdf"
+    },
+    {
+      "id": "S06-D06",
+      "kind": "remittance",
+      "title": "Remittance allocation detail",
+      "issued": "2026-05-08",
+      "release": "B",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C006",
+      "account_id": "SYN-A006",
+      "encounter_id": "S06-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Trace": "SYN-TRACE-006",
+        "Matched claim": "SYN-C006",
+        "Matched account": "SYN-A006",
+        "Amount": 68000
+      },
+      "body": [
+        "Remittance received by provider; ledger shows payment in suspense, not applied."
+      ],
+      "lines": [],
+      "relative_path": "S06/release_B/S06-D06.pdf"
+    },
+    {
+      "id": "S06-D07",
+      "kind": "bill",
+      "title": "Patient account statement",
+      "issued": "2026-05-15",
+      "release": "C",
+      "version": 2,
+      "supersedes": "S06-D04",
+      "claim_id": "SYN-C006",
+      "account_id": "SYN-A006",
+      "encounter_id": "S06-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 100000,
+        "Posted adjustments": 32000,
+        "Posted insurer payments": 68000,
+        "Posted patient payments": 0,
+        "Statement balance": 0,
+        "Statement date": "2026-05-15",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S06/release_C/S06-D07.pdf"
+    }
+  ],
+  "stages": [
+    {
+      "id": "S06-A",
+      "release": "A",
+      "input_document_ids": [
+        "S06-D01",
+        "S06-D02",
+        "S06-D03",
+        "S06-D04",
+        "S06-D05"
+      ],
+      "status": "insurer_payment_trace_unmatched",
+      "expected": {
+        "eob_responsibility_cents": 0,
+        "verified_patient_payments_cents": 0,
+        "supported_remaining_cents": 0,
+        "provider_statement_balance_cents": 68000
+      },
+      "required_findings": [
+        "EOB assigns zero responsibility. Trace does not establish correct account allocation."
+      ],
+      "missing_evidence": [
+        "Remittance-to-claim allocation"
+      ],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S06-D01",
+        "S06-D02",
+        "S06-D03",
+        "S06-D04",
+        "S06-D05"
+      ]
+    },
+    {
+      "id": "S06-B",
+      "release": "B",
+      "input_document_ids": [
+        "S06-D01",
+        "S06-D02",
+        "S06-D03",
+        "S06-D04",
+        "S06-D05",
+        "S06-D06"
+      ],
+      "status": "insurer_payment_in_suspense",
+      "expected": {
+        "eob_responsibility_cents": 0,
+        "verified_patient_payments_cents": 0,
+        "supported_remaining_cents": 0,
+        "provider_statement_balance_cents": 68000
+      },
+      "required_findings": [
+        "Remittance now matches this claim but provider balance remains unreconciled."
+      ],
+      "missing_evidence": [],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S06-D01",
+        "S06-D02",
+        "S06-D03",
+        "S06-D04",
+        "S06-D05",
+        "S06-D06"
+      ]
+    },
+    {
+      "id": "S06-C",
+      "release": "C",
+      "input_document_ids": [
+        "S06-D01",
+        "S06-D02",
+        "S06-D03",
+        "S06-D04",
+        "S06-D05",
+        "S06-D06",
+        "S06-D07"
+      ],
+      "status": "provider_account_closed",
+      "expected": {
+        "eob_responsibility_cents": 0,
+        "verified_patient_payments_cents": 0,
+        "supported_remaining_cents": 0,
+        "provider_statement_balance_cents": 0
+      },
+      "required_findings": [
+        "Corrected statement confirms zero balance; do not credit insurer funds as patient payment."
+      ],
+      "missing_evidence": [],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S06-D01",
+        "S06-D02",
+        "S06-D03",
+        "S06-D04",
+        "S06-D05",
+        "S06-D06",
+        "S06-D07"
+      ]
+    }
+  ],
+  "authoritative_ledger": [],
+  "source_basis": "Notion narrative; documents authored synthetically",
+  "external_validation": "Synthetic arithmetic and evidence behavior only; not certified medical coding or legal rules",
+  "source_urls": [
+    "https://www.reddit.com/r/MedicalBill/comments/1smozl1/is_this_considered_fraud/"
+  ],
+  "reference_assets": [],
+  "gold_status": "authored_v1_not_domain_certified"
+}

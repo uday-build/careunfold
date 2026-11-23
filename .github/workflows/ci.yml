@@ -17,3 +17,27 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run typecheck
+
+  golden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_CLASSIFY_MODEL: ${{ vars.OPENROUTER_CLASSIFY_MODEL }}
+      OPENROUTER_EXTRACT_MODEL: ${{ vars.OPENROUTER_EXTRACT_MODEL }}
+      OPENROUTER_INVESTIGATE_MODEL: ${{ vars.OPENROUTER_INVESTIGATE_MODEL }}
+      CAREUNFOLD_EVAL_LIVE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Golden regression
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "::error::Add OPENROUTER_API_KEY as a GitHub Actions secret so the golden regression suite can run."
+            exit 1
+          fi
+          npm run eval:golden

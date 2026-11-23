@@ -1,0 +1,204 @@
+{
+  "id": "S13",
+  "situation": 13,
+  "title": "Midyear accumulator transfer",
+  "user_prompt": "How much deductible and out-of-pocket limit remains after our plan change?",
+  "fit": "Ready; benefit calculation not a claim",
+  "audit_notes": "No actual claim or bill should be invented solely to fill a schema. Limits are not debt.",
+  "service_date": "2026-07-01",
+  "patient": "Jordan Rivera",
+  "dob": "1991-08-14",
+  "member_id": "SYN-M013",
+  "account_id": "SYN-A013",
+  "claim_id": "SYN-C013",
+  "coverage": [
+    {
+      "plan": "Harbor Health Medical",
+      "member_id": "SYN-M013",
+      "effective_start": "2026-01-01",
+      "effective_end": "2026-06-30",
+      "relationship": "self",
+      "subscriber": "same as patient",
+      "medical_only": true
+    },
+    {
+      "plan": "Harbor Health New Medical",
+      "member_id": "SYN-M013",
+      "effective_start": "2026-07-01",
+      "effective_end": "2026-12-31",
+      "relationship": "self",
+      "medical_only": true
+    }
+  ],
+  "policy": "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+  "documents": [
+    {
+      "id": "S13-D01",
+      "kind": "coverage",
+      "title": "Enrollment confirmation and benefit excerpt",
+      "issued": "2026-01-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C013",
+      "account_id": "SYN-A013",
+      "encounter_id": "S13-V1",
+      "service_date": "2026-07-01",
+      "fields": {
+        "Patient date of birth": "1991-08-14",
+        "Member ID": "SYN-M013"
+      },
+      "body": [
+        "Plan: Harbor Health Medical. Member: SYN-M013. Effective 2026-01-01 through 2026-06-30. Relationship: self. Medical coverage only.",
+        "Plan: Harbor Health New Medical. Member: SYN-M013. Effective 2026-07-01 through 2026-12-31. Relationship: self. Medical coverage only.",
+        "SYNTHETIC PLAN TERMS - apply only to this test family.",
+        "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+        "The patient is the account holder."
+      ],
+      "lines": [],
+      "relative_path": "S13/release_A/S13-D01.pdf"
+    },
+    {
+      "id": "S13-D02",
+      "kind": "visit",
+      "title": "Visit record",
+      "issued": "2026-07-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C013",
+      "account_id": "SYN-A013",
+      "encounter_id": "S13-V1",
+      "service_date": "2026-07-01",
+      "fields": {},
+      "body": [
+        "No clinical encounter is included. This record marks the plan transition date."
+      ],
+      "lines": [],
+      "relative_path": "S13/release_A/S13-D02.pdf"
+    },
+    {
+      "id": "S13-D03",
+      "kind": "benefits",
+      "title": "Family accumulator statements",
+      "issued": "2026-07-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C013",
+      "account_id": "SYN-A013",
+      "encounter_id": "S13-V1",
+      "service_date": "2026-07-01",
+      "fields": {
+        "Old deductible limit": 400000,
+        "Old deductible met": 400000,
+        "Old OOP limit": 600000,
+        "Old OOP met": 600000,
+        "New deductible limit": 500000,
+        "New OOP limit": 750000
+      },
+      "body": [
+        "New plan transfer status pending. No service claim is included. No amount is currently billed in this packet."
+      ],
+      "lines": [],
+      "relative_path": "S13/release_A/S13-D03.pdf"
+    },
+    {
+      "id": "S13-D04",
+      "kind": "benefits",
+      "title": "Accumulator transfer confirmation",
+      "issued": "2026-07-05",
+      "release": "B",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C013",
+      "account_id": "SYN-A013",
+      "encounter_id": "S13-V1",
+      "service_date": "2026-07-01",
+      "fields": {
+        "Credited deductible": 400000,
+        "Credited OOP": 600000
+      },
+      "body": [
+        "Full family credit confirmed in the new plan; deductible spending counts toward OOP under these fictional terms. No additional claims since transfer."
+      ],
+      "lines": [],
+      "relative_path": "S13/release_B/S13-D04.pdf"
+    }
+  ],
+  "stages": [
+    {
+      "id": "S13-A",
+      "release": "A",
+      "input_document_ids": [
+        "S13-D01",
+        "S13-D02",
+        "S13-D03"
+      ],
+      "status": "transfer_unconfirmed",
+      "expected": {
+        "eob_responsibility_cents": null,
+        "verified_patient_payments_cents": 0,
+        "supported_remaining_cents": null,
+        "provider_statement_balance_cents": null
+      },
+      "required_findings": [
+        "Cannot confirm new remaining limits without transfer confirmation.",
+        "Conditional full-transfer arithmetic is 1000 deductible and 1500 OOP; not a 2500 bill."
+      ],
+      "missing_evidence": [
+        "Accumulator transfer confirmation"
+      ],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S13-D01",
+        "S13-D02",
+        "S13-D03"
+      ]
+    },
+    {
+      "id": "S13-B",
+      "release": "B",
+      "input_document_ids": [
+        "S13-D01",
+        "S13-D02",
+        "S13-D03",
+        "S13-D04"
+      ],
+      "status": "accumulator_transfer_confirmed",
+      "expected": {
+        "eob_responsibility_cents": null,
+        "verified_patient_payments_cents": 0,
+        "supported_remaining_cents": null,
+        "provider_statement_balance_cents": null,
+        "remaining_deductible_cents": 100000,
+        "remaining_oop_cents": 150000
+      },
+      "required_findings": [
+        "1000 deductible remaining and 1500 OOP remaining. These overlap; do not add."
+      ],
+      "missing_evidence": [],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S13-D01",
+        "S13-D02",
+        "S13-D03",
+        "S13-D04"
+      ]
+    }
+  ],
+  "authoritative_ledger": [],
+  "source_basis": "Notion narrative; documents authored synthetically",
+  "external_validation": "Synthetic arithmetic and evidence behavior only; not certified medical coding or legal rules",
+  "source_urls": [
+    "https://www.reddit.com/r/MedicalBill/comments/1xjovzw/outofpocket_maximums_wont_count_towards_the_new/"
+  ],
+  "reference_assets": [],
+  "gold_status": "authored_v1_not_domain_certified"
+}

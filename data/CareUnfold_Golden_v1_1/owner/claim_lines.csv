@@ -1,0 +1,37 @@
+case_id,document_id,version,claim_id,code,description,provider,billed_cents,allowed_cents,plan_paid_cents,patient_responsibility_cents,deductible_cents,copay_cents,coinsurance_cents,noncovered_cents,reason,line_id
+S01,S01-D03,1,SYN-C001,72050,Cervical spine radiographs,Cedar Medical,14000,8000,7000,1000,0,0,1000,0,Processed under service-date plan,SYN-C001-L1
+S01,S01-D03,1,SYN-C001,72080,Thoracolumbar radiographs,Cedar Medical,9000,0,0,0,0,0,0,0,Provider adjustment; no patient responsibility,SYN-C001-L2
+S01,S01-D03,1,SYN-C001,72114,Lumbar spine radiographs,Cedar Medical,16000,10000,2000,8000,0,0,8000,0,Processed under service-date plan,SYN-C001-L3
+S01,S01-D03,1,SYN-C001,99205,New patient office visit,Cedar Medical,50000,25000,17500,7500,0,7500,0,0,Processed under service-date plan,SYN-C001-L4
+S01,S01-D03,1,SYN-C001,99244,Office consultation,Cedar Medical,55000,0,0,0,0,0,0,0,Disallowed in this synthetic adjudication; provider responsibility,SYN-C001-L5
+S02,S02-D03,1,SYN-C002,RAD-A,Radiology technical service,Cedar Medical,300000,200000,40000,160000,150000,0,10000,0,Processed under service-date plan,SYN-C002-L1
+S02,S02-D03,1,SYN-C002,RAD-B,Contrast material,Cedar Medical,2000,1000,800,200,0,0,200,0,Processed under service-date plan,SYN-C002-L2
+S02,S02-D03,1,SYN-C002,RAD-C,Administration,Cedar Medical,10000,5000,4000,1000,0,0,1000,0,Processed under service-date plan,SYN-C002-L3
+S02,S02-D04,2,SYN-C002,RAD-A,Radiology technical service,Cedar Medical,300000,150000,120000,30000,0,0,30000,0,Processed under service-date plan,SYN-C002-L1
+S02,S02-D04,2,SYN-C002,RAD-B,Contrast material,Cedar Medical,2000,1000,800,200,0,0,200,0,Processed under service-date plan,SYN-C002-L2
+S02,S02-D04,2,SYN-C002,RAD-C,Administration,Cedar Medical,10000,5000,4000,1000,0,0,1000,0,Processed under service-date plan,SYN-C002-L3
+S03,S03-D03,1,SYN-C003,CT-BODY,CT scan/body - hospital,Cedar Medical,650000,380000,220000,160000,160000,0,0,0,Processed under service-date plan,SYN-C003-L1
+S03,S03-D03,1,SYN-C003,CLINIC,Clinic visit - hospital,Cedar Medical,22000,10000,0,10000,0,10000,0,0,Processed under service-date plan,SYN-C003-L2
+S03,S03-D03,1,SYN-C003,IV,Injection/IV therapy,Cedar Medical,85000,40000,40000,0,0,0,0,0,Processed under service-date plan,SYN-C003-L3
+S03,S03-D03,1,SYN-C003,LAB,Lab services,Cedar Medical,9000,5000,5000,0,0,0,0,0,Processed under service-date plan,SYN-C003-L4
+S03,S03-D03,1,SYN-C003,RX,Pharmacy,Cedar Medical,4000,2000,2000,0,0,0,0,0,Processed under service-date plan,SYN-C003-L5
+S03,S03-D05,1,SYN-C003-R,CT-READ,Professional interpretation,Harbor Radiology,40000,20000,20000,0,0,0,0,0,Processed under service-date plan,SYN-C003-R-L1
+S04,S04-D03,1,SYN-C004,ER,Emergency facility service,Cedar Medical,30000,20000,16000,4000,0,0,4000,0,Processed under service-date plan,SYN-C004-L1
+S05,S05-D03,1,SYN-C005,VISIT,Office visit,Cedar Medical,18000,10000,8800,1200,0,1200,0,0,Processed under service-date plan,SYN-C005-L1
+S05,S05-D03,1,SYN-C005,LAB,In-office lab,Cedar Medical,9000,6000,4200,1800,0,1800,0,0,Processed under service-date plan,SYN-C005-L2
+S06,S06-D03,1,SYN-C006,PROC,Outpatient procedure,Cedar Medical,100000,68000,68000,0,0,0,0,0,Processed under service-date plan,SYN-C006-L1
+S07,S07-D03,1,SYN-C007,VISIT,Historical office visit,Cedar Medical,30000,18000,11200,6800,0,4000,2800,0,Processed under service-date plan,SYN-C007-L1
+S08,S08-D03,1,SYN-C008,99213,Office visit,Cedar Medical,20000,15000,10000,5000,0,5000,0,0,Processed under service-date plan,SYN-C008-L1
+S08,S08-D03,1,SYN-C008,XR,Extremity radiographs,Cedar Medical,50000,30000,16000,14000,10000,0,4000,0,Processed under service-date plan,SYN-C008-L2
+S09,S09-D03,1,SYN-C009,INPATIENT,Hospital stay,Cedar Medical,12000000,,0,,0,0,0,0,Pending coordination of benefits; no final patient responsibility,SYN-C009-L1
+S09,S09-D04,1,SYN-C009,INPATIENT,Hospital stay,Cedar Medical,12000000,,0,,0,0,0,0,Pending coordination of benefits; no final patient responsibility,SYN-C009-L1
+S09,S09-D07,1,SYN-C009-PRIMARY,INPATIENT,Hospital stay,Cedar Medical,12000000,3000000,2700000,300000,0,0,300000,0,Processed under service-date plan,SYN-C009-PRIMARY-L1
+S11,S11-D03,1,SYN-C011,CT,CT scan,Cedar Medical,48000,0,0,0,0,0,0,0,Missing authorization; patient responsibility zero under this EOB,SYN-C011-L1
+S12,S12-D03,1,SYN-C012,LAB,Diagnostic laboratory service,Cedar Medical,42000,0,0,0,0,0,0,0,Denied; provider responsibility under this adjudication,SYN-C012-L1
+S14,S14-D03,1,SYN-C014-F,ENDO-F,Facility service,Facility,400000,200000,160000,40000,0,0,40000,0,Processed under service-date plan,SYN-C014-F-L1
+S14,S14-D05,1,SYN-C014-C,ENDO-C,Clinician service,Clinician,100000,50000,40000,10000,0,0,10000,0,Processed under service-date plan,SYN-C014-C-L1
+S14,S14-D07,1,SYN-C014-P,ENDO-P,Pathology service,Pathology,30000,15000,12000,3000,0,0,3000,0,Processed under service-date plan,SYN-C014-P-L1
+S14,S14-D09,1,SYN-C014-A,ENDO-A,Anesthesia service,Anesthesia,80000,40000,32000,8000,0,0,8000,0,Processed under service-date plan,SYN-C014-A-L1
+S14,S14-D14,2,SYN-C014-F,ENDO-F,Facility service,Facility,400000,150000,120000,30000,0,0,30000,0,Processed under service-date plan,SYN-C014-F-L1
+S15,S15-D05,1,SYN-C015,HOSP,Emergency hospitalization,Cedar Medical,4800000,0,0,0,0,0,0,0,Denied for missing authorization/notification; patient liability zero,SYN-C015-L1
+S16,S16-D03,1,SYN-C016,99281,ER Level 1,Cedar Medical,46000,46000,0,46000,0,0,0,46000,Plan denial asserts left against medical advice; subject to appeal,SYN-C016-L1

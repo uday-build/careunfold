@@ -1,0 +1,327 @@
+{
+  "id": "S03",
+  "situation": 3,
+  "title": "Correct CT bill with affordability need",
+  "user_prompt": "I cannot afford this scan bill. Is it correct and what can I do?",
+  "fit": "Ready as authored clean control",
+  "audit_notes": "Source images do not prove complete source correctness. Author complete supporting EOB and plan. Preserve CT, clinic, injection, lab, pharmacy, separate reader.",
+  "service_date": "2026-04-10",
+  "patient": "Jamie Rivera",
+  "dob": "1991-08-14",
+  "member_id": "SYN-M003",
+  "account_id": "SYN-A003",
+  "claim_id": "SYN-C003",
+  "coverage": [
+    {
+      "plan": "Harbor Health Medical",
+      "member_id": "SYN-M003",
+      "effective_start": "2026-01-01",
+      "effective_end": "2026-12-31",
+      "relationship": "self",
+      "subscriber": "same as patient",
+      "medical_only": true
+    }
+  ],
+  "policy": "Individual deductible 2000; 400 already met before encounter. CT applies remaining 1600 then plan pays the rest for this test. Clinic visit copay 100 is exempt from deductible. Injection, lab, pharmacy and separate reading covered at 100% after deductible. Adjudicate CT first.",
+  "documents": [
+    {
+      "id": "S03-D01",
+      "kind": "coverage",
+      "title": "Enrollment confirmation and benefit excerpt",
+      "issued": "2026-01-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C003",
+      "account_id": "SYN-A003",
+      "encounter_id": "S03-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Patient date of birth": "1991-08-14",
+        "Member ID": "SYN-M003"
+      },
+      "body": [
+        "Plan: Harbor Health Medical. Member: SYN-M003. Effective 2026-01-01 through 2026-12-31. Relationship: self. Medical coverage only.",
+        "SYNTHETIC PLAN TERMS - apply only to this test family.",
+        "Individual deductible 2000; 400 already met before encounter. CT applies remaining 1600 then plan pays the rest for this test. Clinic visit copay 100 is exempt from deductible. Injection, lab, pharmacy and separate reading covered at 100% after deductible. Adjudicate CT first.",
+        "The patient is the account holder."
+      ],
+      "lines": [],
+      "relative_path": "S03/release_A/S03-D01.pdf"
+    },
+    {
+      "id": "S03-D02",
+      "kind": "visit",
+      "title": "Visit record",
+      "issued": "2026-04-10",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C003",
+      "account_id": "SYN-A003",
+      "encounter_id": "S03-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Encounter at Cedar Medical. Services are listed in the claim documents. This note does not establish insurer adjudication."
+      ],
+      "lines": [],
+      "relative_path": "S03/release_A/S03-D02.pdf"
+    },
+    {
+      "id": "S03-D03",
+      "kind": "eob",
+      "title": "Explanation of benefits",
+      "issued": "2026-04-24",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C003",
+      "account_id": "SYN-A003",
+      "encounter_id": "S03-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "THIS IS NOT A BILL. Patient payments made to the provider are not deducted from EOB responsibility.",
+        "Amounts not assigned to the patient remain subject to provider/plan reconciliation; this document is not evidence that the provider posted payment."
+      ],
+      "lines": [
+        {
+          "code": "CT-BODY",
+          "description": "CT scan/body - hospital",
+          "provider": "Cedar Medical",
+          "billed_cents": 650000,
+          "allowed_cents": 380000,
+          "plan_paid_cents": 220000,
+          "patient_responsibility_cents": 160000,
+          "deductible_cents": 160000,
+          "copay_cents": 0,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 0,
+          "reason": "Processed under service-date plan",
+          "line_id": "SYN-C003-L1"
+        },
+        {
+          "code": "CLINIC",
+          "description": "Clinic visit - hospital",
+          "provider": "Cedar Medical",
+          "billed_cents": 22000,
+          "allowed_cents": 10000,
+          "plan_paid_cents": 0,
+          "patient_responsibility_cents": 10000,
+          "deductible_cents": 0,
+          "copay_cents": 10000,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 0,
+          "reason": "Processed under service-date plan",
+          "line_id": "SYN-C003-L2"
+        },
+        {
+          "code": "IV",
+          "description": "Injection/IV therapy",
+          "provider": "Cedar Medical",
+          "billed_cents": 85000,
+          "allowed_cents": 40000,
+          "plan_paid_cents": 40000,
+          "patient_responsibility_cents": 0,
+          "deductible_cents": 0,
+          "copay_cents": 0,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 0,
+          "reason": "Processed under service-date plan",
+          "line_id": "SYN-C003-L3"
+        },
+        {
+          "code": "LAB",
+          "description": "Lab services",
+          "provider": "Cedar Medical",
+          "billed_cents": 9000,
+          "allowed_cents": 5000,
+          "plan_paid_cents": 5000,
+          "patient_responsibility_cents": 0,
+          "deductible_cents": 0,
+          "copay_cents": 0,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 0,
+          "reason": "Processed under service-date plan",
+          "line_id": "SYN-C003-L4"
+        },
+        {
+          "code": "RX",
+          "description": "Pharmacy",
+          "provider": "Cedar Medical",
+          "billed_cents": 4000,
+          "allowed_cents": 2000,
+          "plan_paid_cents": 2000,
+          "patient_responsibility_cents": 0,
+          "deductible_cents": 0,
+          "copay_cents": 0,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 0,
+          "reason": "Processed under service-date plan",
+          "line_id": "SYN-C003-L5"
+        }
+      ],
+      "relative_path": "S03/release_A/S03-D03.pdf"
+    },
+    {
+      "id": "S03-D04",
+      "kind": "bill",
+      "title": "Patient account statement",
+      "issued": "2026-05-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C003",
+      "account_id": "SYN-A003",
+      "encounter_id": "S03-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 770000,
+        "Posted adjustments": 333000,
+        "Posted insurer payments": 267000,
+        "Posted patient payments": 0,
+        "Statement balance": 170000,
+        "Statement date": "2026-05-01",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S03/release_A/S03-D04.pdf"
+    },
+    {
+      "id": "S03-D05",
+      "kind": "eob",
+      "title": "Explanation of benefits",
+      "issued": "2026-04-24",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C003-R",
+      "account_id": "SYN-A003",
+      "encounter_id": "S03-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "THIS IS NOT A BILL. Patient payments made to the provider are not deducted from EOB responsibility.",
+        "Amounts not assigned to the patient remain subject to provider/plan reconciliation; this document is not evidence that the provider posted payment."
+      ],
+      "lines": [
+        {
+          "code": "CT-READ",
+          "description": "Professional interpretation",
+          "provider": "Harbor Radiology",
+          "billed_cents": 40000,
+          "allowed_cents": 20000,
+          "plan_paid_cents": 20000,
+          "patient_responsibility_cents": 0,
+          "deductible_cents": 0,
+          "copay_cents": 0,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 0,
+          "reason": "Processed under service-date plan",
+          "line_id": "SYN-C003-R-L1"
+        }
+      ],
+      "relative_path": "S03/release_A/S03-D05.pdf"
+    },
+    {
+      "id": "S03-D06",
+      "kind": "bill",
+      "title": "Radiology professional statement",
+      "issued": "2026-05-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C003-R",
+      "account_id": "SYN-A003-R",
+      "encounter_id": "S03-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 40000,
+        "Posted adjustments": 20000,
+        "Posted insurer payments": 20000,
+        "Posted patient payments": 0,
+        "Statement balance": 0,
+        "Statement date": "2026-05-01",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S03/release_A/S03-D06.pdf"
+    },
+    {
+      "id": "S03-D07",
+      "kind": "note",
+      "title": "Patient message",
+      "issued": "2026-05-03",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C003",
+      "account_id": "SYN-A003",
+      "encounter_id": "S03-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "I am a student and cannot afford the balance. Please help me understand assistance or payment options."
+      ],
+      "lines": [],
+      "relative_path": "S03/release_A/S03-D07.pdf"
+    }
+  ],
+  "stages": [
+    {
+      "id": "S03-A",
+      "release": "A",
+      "input_document_ids": [
+        "S03-D01",
+        "S03-D02",
+        "S03-D03",
+        "S03-D04",
+        "S03-D05",
+        "S03-D06",
+        "S03-D07"
+      ],
+      "status": "reconciled_affordability_support",
+      "expected": {
+        "eob_responsibility_cents": 170000,
+        "verified_patient_payments_cents": 0,
+        "supported_remaining_cents": 170000,
+        "provider_statement_balance_cents": 170000
+      },
+      "required_findings": [
+        "No detected discrepancy in supplied documents.",
+        "Separate professional reading is not a duplicate.",
+        "Offer financial-assistance inquiry and payment-plan questions; do not promise eligibility."
+      ],
+      "missing_evidence": [],
+      "forbidden_claims": [
+        "An unnecessary billing dispute is required",
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S03-D01",
+        "S03-D02",
+        "S03-D03",
+        "S03-D04",
+        "S03-D05",
+        "S03-D06",
+        "S03-D07"
+      ]
+    }
+  ],
+  "authoritative_ledger": [],
+  "source_basis": "Inspected Notion image layout and service categories; fictional amounts and adjudication",
+  "external_validation": "Synthetic arithmetic and evidence behavior only; not certified medical coding or legal rules",
+  "source_urls": [
+    "https://www.reddit.com/r/MedicalBill/comments/spc3ai/19f\\_college\\_student\\_i\\_need\\_help\\_trying\\_to\\_figure/](https://www.reddit.com/r/MedicalBill/comments/spc3ai/19f_college_student_i_need_help_trying_to_figure/"
+  ],
+  "reference_assets": [
+    "Notion image 3",
+    "Notion image 4",
+    "Notion image 5"
+  ],
+  "gold_status": "authored_v1_not_domain_certified"
+}

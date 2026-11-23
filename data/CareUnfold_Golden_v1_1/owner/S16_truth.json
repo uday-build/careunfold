@@ -1,0 +1,516 @@
+{
+  "id": "S16",
+  "situation": 16,
+  "title": "ER departure and disputed service",
+  "user_prompt": "I left before treatment. Why did the ER bill me?",
+  "fit": "Ready for evidence-calibrated dispute; legal/coding verdict excluded",
+  "audit_notes": "Uploaded one-page photographed statement inspected; source has zero payments. Synthetic partial payment is subsequent. Do not assert triage-only always makes a facility charge invalid. No reviewed legal or CPT rule provided.",
+  "service_date": "2026-04-10",
+  "patient": "Taylor Rivera",
+  "dob": "1991-08-14",
+  "member_id": "SYN-M016",
+  "account_id": "SYN-A016",
+  "claim_id": "SYN-C016",
+  "coverage": [
+    {
+      "plan": "Harbor Health Medical",
+      "member_id": "SYN-M016",
+      "effective_start": "2026-01-01",
+      "effective_end": "2026-12-31",
+      "relationship": "self",
+      "subscriber": "same as patient",
+      "medical_only": true
+    }
+  ],
+  "policy": "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+  "documents": [
+    {
+      "id": "S16-D01",
+      "kind": "coverage",
+      "title": "Enrollment confirmation and benefit excerpt",
+      "issued": "2026-01-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C016",
+      "account_id": "SYN-A016",
+      "encounter_id": "S16-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Patient date of birth": "1991-08-14",
+        "Member ID": "SYN-M016"
+      },
+      "body": [
+        "Plan: Harbor Health Medical. Member: SYN-M016. Effective 2026-01-01 through 2026-12-31. Relationship: self. Medical coverage only.",
+        "SYNTHETIC PLAN TERMS - apply only to this test family.",
+        "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+        "The patient is the account holder."
+      ],
+      "lines": [],
+      "relative_path": "S16/release_A/S16-D01.pdf"
+    },
+    {
+      "id": "S16-D02",
+      "kind": "visit",
+      "title": "Visit record",
+      "issued": "2026-04-10",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C016",
+      "account_id": "SYN-A016",
+      "encounter_id": "S16-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Encounter at Cedar Medical. Patient reports vital signs checked at Cedar ER, then left before clinician evaluation. Later received treatment at Harbor Hospital; separate encounter."
+      ],
+      "lines": [],
+      "relative_path": "S16/release_A/S16-D02.pdf"
+    },
+    {
+      "id": "S16-D03",
+      "kind": "eob",
+      "title": "Explanation of benefits",
+      "issued": "2026-04-24",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C016",
+      "account_id": "SYN-A016",
+      "encounter_id": "S16-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "THIS IS NOT A BILL. Patient payments made to the provider are not deducted from EOB responsibility.",
+        "Amounts not assigned to the patient remain subject to provider/plan reconciliation; this document is not evidence that the provider posted payment."
+      ],
+      "lines": [
+        {
+          "code": "99281",
+          "description": "ER Level 1",
+          "provider": "Cedar Medical",
+          "billed_cents": 46000,
+          "allowed_cents": 46000,
+          "plan_paid_cents": 0,
+          "patient_responsibility_cents": 46000,
+          "deductible_cents": 0,
+          "copay_cents": 0,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 46000,
+          "reason": "Plan denial asserts left against medical advice; subject to appeal",
+          "line_id": "SYN-C016-L1"
+        }
+      ],
+      "relative_path": "S16/release_A/S16-D03.pdf"
+    },
+    {
+      "id": "S16-D04",
+      "kind": "receipt",
+      "title": "Payment receipt",
+      "issued": "2026-04-28",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C016",
+      "account_id": "SYN-A016",
+      "encounter_id": "S16-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Receipt ID": "S16-P1",
+        "Amount received": 3000,
+        "Intended account": "SYN-A016",
+        "Method": "Synthetic card ending 0000"
+      },
+      "body": [
+        "This receipt confirms payment received for the stated account; it is not proof of allocation in the current statement."
+      ],
+      "lines": [],
+      "relative_path": "S16/release_A/S16-D04.pdf"
+    },
+    {
+      "id": "S16-D05",
+      "kind": "bill",
+      "title": "Patient account statement",
+      "issued": "2026-05-01",
+      "release": "A",
+      "version": 2,
+      "supersedes": "S16-D12",
+      "claim_id": "SYN-C016",
+      "account_id": "SYN-A016",
+      "encounter_id": "S16-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 46000,
+        "Posted adjustments": 0,
+        "Posted insurer payments": 0,
+        "Posted patient payments": 3000,
+        "Statement balance": 43000,
+        "Statement date": "2026-05-01",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S16/release_A/S16-D05.pdf"
+    },
+    {
+      "id": "S16-D06",
+      "kind": "visit",
+      "title": "Second hospital discharge summary",
+      "issued": "2026-04-10",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C016-SECOND",
+      "account_id": "SYN-A016-SECOND",
+      "encounter_id": "S16-V2",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Harbor Hospital: separate ER evaluation and treatment after departure from Cedar. No financial statement for this second encounter supplied."
+      ],
+      "lines": [],
+      "relative_path": "S16/release_A/S16-D06.pdf"
+    },
+    {
+      "id": "S16-D07",
+      "kind": "clinical",
+      "title": "Cedar triage and departure record",
+      "issued": "2026-05-05",
+      "release": "B",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C016",
+      "account_id": "SYN-A016",
+      "encounter_id": "S16-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Pulse, temperature and blood pressure measured. Departure status: left without being seen. No clinician evaluation documented in this record. No medication administration recorded."
+      ],
+      "lines": [],
+      "relative_path": "S16/release_B/S16-D07.pdf"
+    },
+    {
+      "id": "S16-D08",
+      "kind": "clinical",
+      "title": "Clinical evaluation record",
+      "issued": "2026-05-06",
+      "release": "X",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C016",
+      "account_id": "SYN-A016",
+      "encounter_id": "S16-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Clinician evaluation completed at 11:10 before departure at 12:30. Initial triage recorded at 08:25. No medication administered during this encounter."
+      ],
+      "lines": [],
+      "relative_path": "S16/release_X/S16-D08.pdf"
+    },
+    {
+      "id": "S16-D09",
+      "kind": "notice",
+      "title": "Provider correction letter",
+      "issued": "2026-05-20",
+      "release": "C",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C016",
+      "account_id": "SYN-A016",
+      "encounter_id": "S16-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Following review, the facility reversed its full 460 charge. Your earlier 30 payment has been refunded."
+      ],
+      "lines": [],
+      "relative_path": "S16/release_C/S16-D09.pdf"
+    },
+    {
+      "id": "S16-D10",
+      "kind": "ledger",
+      "title": "Account transaction ledger",
+      "issued": "2026-05-20",
+      "release": "C",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C016",
+      "account_id": "SYN-A016",
+      "encounter_id": "S16-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Charge 460; patient payment -30; charge reversal -460; refund +30; ending account balance 0. Refund transaction SYN-R016 settled to original payment method."
+      ],
+      "lines": [],
+      "relative_path": "S16/release_C/S16-D10.pdf"
+    },
+    {
+      "id": "S16-D11",
+      "kind": "bill",
+      "title": "Patient account statement",
+      "issued": "2026-05-20",
+      "release": "C",
+      "version": 3,
+      "supersedes": "S16-D05",
+      "claim_id": "SYN-C016",
+      "account_id": "SYN-A016",
+      "encounter_id": "S16-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 46000,
+        "Posted adjustments": 46000,
+        "Posted insurer payments": 0,
+        "Posted patient payments": 0,
+        "Statement balance": 0,
+        "Statement date": "2026-05-20",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [
+        "Net patient payments 0 after 30 refund."
+      ],
+      "lines": [],
+      "relative_path": "S16/release_C/S16-D11.pdf"
+    },
+    {
+      "id": "S16-D12",
+      "kind": "bill",
+      "title": "Initial itemized ER statement",
+      "issued": "2026-04-25",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C016",
+      "account_id": "SYN-A016",
+      "encounter_id": "S16-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 46000,
+        "Posted adjustments": 0,
+        "Posted insurer payments": 0,
+        "Posted patient payments": 0,
+        "Statement balance": 46000,
+        "Statement date": "2026-04-25",
+        "Payment due": "Upon receipt"
+      },
+      "body": [
+        "Primary coverage: Harbor Health. One service line; no payments or adjustments posted as of this statement."
+      ],
+      "lines": [],
+      "relative_path": "S16/release_A/S16-D12.pdf"
+    }
+  ],
+  "stages": [
+    {
+      "id": "S16-A",
+      "release": "A",
+      "input_document_ids": [
+        "S16-D01",
+        "S16-D02",
+        "S16-D03",
+        "S16-D04",
+        "S16-D05",
+        "S16-D06",
+        "S16-D12"
+      ],
+      "status": "service_and_denial_disputed",
+      "expected": {
+        "eob_responsibility_cents": 46000,
+        "verified_patient_payments_cents": 3000,
+        "supported_remaining_cents": null,
+        "provider_statement_balance_cents": 43000,
+        "arithmetic_eob_net_cents": 43000
+      },
+      "required_findings": [
+        "Statement balance 430; adjudicated responsibility 460 remains disputed.",
+        "Patient narrative and insurer departure description differ.",
+        "No clinician evaluation reported does not establish no service."
+      ],
+      "missing_evidence": [
+        "Clinical record",
+        "Departure status",
+        "Charge breakdown",
+        "Applicable coding and plan terms"
+      ],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S16-D01",
+        "S16-D02",
+        "S16-D03",
+        "S16-D04",
+        "S16-D05",
+        "S16-D06",
+        "S16-D12"
+      ]
+    },
+    {
+      "id": "S16-B",
+      "release": "B",
+      "input_document_ids": [
+        "S16-D01",
+        "S16-D02",
+        "S16-D03",
+        "S16-D04",
+        "S16-D05",
+        "S16-D06",
+        "S16-D07",
+        "S16-D12"
+      ],
+      "status": "departure_status_conflict",
+      "expected": {
+        "eob_responsibility_cents": 46000,
+        "verified_patient_payments_cents": 3000,
+        "supported_remaining_cents": null,
+        "provider_statement_balance_cents": 43000,
+        "arithmetic_eob_net_cents": 43000
+      },
+      "required_findings": [
+        "Chart says left without being seen; denial says against medical advice. Request review rather than equate labels.",
+        "Clinical documentation alone does not determine facility charge validity."
+      ],
+      "missing_evidence": [
+        "Charge breakdown",
+        "Applicable coding and plan terms"
+      ],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S16-D01",
+        "S16-D02",
+        "S16-D03",
+        "S16-D04",
+        "S16-D05",
+        "S16-D06",
+        "S16-D07",
+        "S16-D12"
+      ]
+    },
+    {
+      "id": "S16-C",
+      "release": "C",
+      "input_document_ids": [
+        "S16-D01",
+        "S16-D02",
+        "S16-D03",
+        "S16-D04",
+        "S16-D05",
+        "S16-D06",
+        "S16-D07",
+        "S16-D09",
+        "S16-D10",
+        "S16-D11",
+        "S16-D12"
+      ],
+      "status": "provider_account_closed_refunded",
+      "expected": {
+        "eob_responsibility_cents": 46000,
+        "verified_patient_payments_cents": 3000,
+        "supported_remaining_cents": 0,
+        "provider_statement_balance_cents": 0,
+        "refund_cents": 3000,
+        "net_patient_payments_cents": 0
+      },
+      "required_findings": [
+        "Provider reversal and refund establish closure despite unrevised historical EOB.",
+        "Do not infer insurer payment."
+      ],
+      "missing_evidence": [],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S16-D01",
+        "S16-D02",
+        "S16-D03",
+        "S16-D04",
+        "S16-D05",
+        "S16-D06",
+        "S16-D07",
+        "S16-D09",
+        "S16-D10",
+        "S16-D11",
+        "S16-D12"
+      ]
+    },
+    {
+      "id": "S16-X",
+      "release": "X",
+      "input_document_ids": [
+        "S16-D01",
+        "S16-D02",
+        "S16-D03",
+        "S16-D04",
+        "S16-D05",
+        "S16-D06",
+        "S16-D08",
+        "S16-D12"
+      ],
+      "status": "documented_evaluation_disputed",
+      "expected": {
+        "eob_responsibility_cents": 46000,
+        "verified_patient_payments_cents": 3000,
+        "supported_remaining_cents": null,
+        "provider_statement_balance_cents": 43000,
+        "arithmetic_eob_net_cents": 43000
+      },
+      "required_findings": [
+        "The clinical record documents an evaluation, conflicting with the patient recollection.",
+        "Do not maintain the triage-only conclusion; charge and denial still need applicable rules."
+      ],
+      "missing_evidence": [
+        "Charge breakdown",
+        "Applicable coding and plan terms"
+      ],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S16-D01",
+        "S16-D02",
+        "S16-D03",
+        "S16-D04",
+        "S16-D05",
+        "S16-D06",
+        "S16-D08",
+        "S16-D12"
+      ]
+    }
+  ],
+  "authoritative_ledger": [
+    {
+      "transaction_id": "S16-P1",
+      "type": "patient_payment",
+      "amount_cents": 3000,
+      "received_date": "2026-04-28",
+      "intended_account": "SYN-A016",
+      "posted_account": "SYN-A016",
+      "posted_date": "2026-04-28",
+      "reversed": false
+    }
+  ],
+  "source_basis": "Uploaded source PDF visually inspected; recreated structure with fictional identifiers and amounts",
+  "external_validation": "Synthetic arithmetic and evidence behavior only; not certified medical coding or legal rules",
+  "visit_note": "Patient reports vital signs checked at Cedar ER, then left before clinician evaluation. Later received treatment at Harbor Hospital; separate encounter.",
+  "source_pdf": "september-2026-botm.pdf",
+  "source_inspection": {
+    "pages": 1,
+    "observed_structure": "Photographed itemized statement; account and guarantor identifiers, admission/discharge dates, service date, procedure code 99281, description, quantity 1, charge; payments, adjustments, balance. Source has zero payments; partial payment is a separate later synthetic event.",
+    "source_values_not_reused": true
+  },
+  "source_urls": [
+    "https://kffhealthnews.org/health-care-costs/emergency-room-not-treated-still-charged-illinois-bill-of-the-month-september-2026/",
+    "https://s3.documentcloud.org/documents/28677914/september-2026-botm.pdf"
+  ],
+  "reference_assets": [],
+  "gold_status": "authored_v1_not_domain_certified"
+}

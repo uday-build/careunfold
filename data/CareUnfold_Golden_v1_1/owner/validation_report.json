@@ -1,0 +1,9 @@
+{
+  "checks": 2869,
+  "failures": [],
+  "cases": 16,
+  "stages": 32,
+  "pdfs": 121,
+  "pages": 124,
+  "scope": "Arithmetic, cross references, exact key targets, PDF extraction and bounds; not independent domain certification."
+}

@@ -1,0 +1,212 @@
+{
+  "id": "S07",
+  "situation": 7,
+  "title": "Delayed bill after coverage ended",
+  "user_prompt": "I left this insurance plan. Why am I getting a bill now?",
+  "fit": "Ready",
+  "audit_notes": "Source thread limited; author historical eligibility and exact cost share.",
+  "service_date": "2025-08-15",
+  "patient": "Robin Rivera",
+  "dob": "1991-08-14",
+  "member_id": "SYN-M007",
+  "account_id": "SYN-A007",
+  "claim_id": "SYN-C007",
+  "coverage": [
+    {
+      "plan": "Harbor Health Medical",
+      "member_id": "SYN-M007",
+      "effective_start": "2025-01-01",
+      "effective_end": "2025-12-31",
+      "relationship": "self",
+      "subscriber": "same as patient",
+      "medical_only": true
+    }
+  ],
+  "policy": "At this service date: 40 office copay plus 20% of the remaining allowed 140; deductible waived for this service. No current coverage is implied.",
+  "documents": [
+    {
+      "id": "S07-D01",
+      "kind": "coverage",
+      "title": "Enrollment confirmation and benefit excerpt",
+      "issued": "2026-01-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C007",
+      "account_id": "SYN-A007",
+      "encounter_id": "S07-V1",
+      "service_date": "2025-08-15",
+      "fields": {
+        "Patient date of birth": "1991-08-14",
+        "Member ID": "SYN-M007"
+      },
+      "body": [
+        "Plan: Harbor Health Medical. Member: SYN-M007. Effective 2025-01-01 through 2025-12-31. Relationship: self. Medical coverage only.",
+        "SYNTHETIC PLAN TERMS - apply only to this test family.",
+        "At this service date: 40 office copay plus 20% of the remaining allowed 140; deductible waived for this service. No current coverage is implied.",
+        "The patient is the account holder."
+      ],
+      "lines": [],
+      "relative_path": "S07/release_A/S07-D01.pdf"
+    },
+    {
+      "id": "S07-D02",
+      "kind": "visit",
+      "title": "Visit record",
+      "issued": "2025-08-15",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C007",
+      "account_id": "SYN-A007",
+      "encounter_id": "S07-V1",
+      "service_date": "2025-08-15",
+      "fields": {},
+      "body": [
+        "Encounter at Cedar Medical. Services are listed in the claim documents. This note does not establish insurer adjudication."
+      ],
+      "lines": [],
+      "relative_path": "S07/release_A/S07-D02.pdf"
+    },
+    {
+      "id": "S07-D03",
+      "kind": "eob",
+      "title": "Explanation of benefits",
+      "issued": "2026-02-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C007",
+      "account_id": "SYN-A007",
+      "encounter_id": "S07-V1",
+      "service_date": "2025-08-15",
+      "fields": {},
+      "body": [
+        "THIS IS NOT A BILL. Patient payments made to the provider are not deducted from EOB responsibility.",
+        "Amounts not assigned to the patient remain subject to provider/plan reconciliation; this document is not evidence that the provider posted payment."
+      ],
+      "lines": [
+        {
+          "code": "VISIT",
+          "description": "Historical office visit",
+          "provider": "Cedar Medical",
+          "billed_cents": 30000,
+          "allowed_cents": 18000,
+          "plan_paid_cents": 11200,
+          "patient_responsibility_cents": 6800,
+          "deductible_cents": 0,
+          "copay_cents": 4000,
+          "coinsurance_cents": 2800,
+          "noncovered_cents": 0,
+          "reason": "Processed under service-date plan",
+          "line_id": "SYN-C007-L1"
+        }
+      ],
+      "relative_path": "S07/release_A/S07-D03.pdf"
+    },
+    {
+      "id": "S07-D04",
+      "kind": "receipt",
+      "title": "Payment receipt",
+      "issued": "2025-08-15",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C007",
+      "account_id": "SYN-A007",
+      "encounter_id": "S07-V1",
+      "service_date": "2025-08-15",
+      "fields": {
+        "Receipt ID": "S07-P1",
+        "Amount received": 4000,
+        "Intended account": "SYN-A007",
+        "Method": "Synthetic card ending 0000"
+      },
+      "body": [
+        "This receipt confirms payment received for the stated account; it is not proof of allocation in the current statement."
+      ],
+      "lines": [],
+      "relative_path": "S07/release_A/S07-D04.pdf"
+    },
+    {
+      "id": "S07-D05",
+      "kind": "bill",
+      "title": "Patient account statement",
+      "issued": "2026-02-15",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C007",
+      "account_id": "SYN-A007",
+      "encounter_id": "S07-V1",
+      "service_date": "2025-08-15",
+      "fields": {
+        "Total charges": 30000,
+        "Posted adjustments": 12000,
+        "Posted insurer payments": 11200,
+        "Posted patient payments": 4000,
+        "Statement balance": 2800,
+        "Statement date": "2026-02-15",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S07/release_A/S07-D05.pdf"
+    }
+  ],
+  "stages": [
+    {
+      "id": "S07-A",
+      "release": "A",
+      "input_document_ids": [
+        "S07-D01",
+        "S07-D02",
+        "S07-D03",
+        "S07-D04",
+        "S07-D05"
+      ],
+      "status": "reconciled_historical_coverage",
+      "expected": {
+        "eob_responsibility_cents": 6800,
+        "verified_patient_payments_cents": 4000,
+        "supported_remaining_cents": 2800,
+        "provider_statement_balance_cents": 2800
+      },
+      "required_findings": [
+        "Use 2025 service-date coverage. 68 responsibility less 40 receipt equals 28.",
+        "Late arrival alone does not prove invalidity."
+      ],
+      "missing_evidence": [],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S07-D01",
+        "S07-D02",
+        "S07-D03",
+        "S07-D04",
+        "S07-D05"
+      ]
+    }
+  ],
+  "authoritative_ledger": [
+    {
+      "transaction_id": "S07-P1",
+      "type": "patient_payment",
+      "amount_cents": 4000,
+      "received_date": "2025-08-15",
+      "intended_account": "SYN-A007",
+      "posted_account": "SYN-A007",
+      "posted_date": "2025-08-15",
+      "reversed": false
+    }
+  ],
+  "source_basis": "Notion narrative; documents authored synthetically",
+  "external_validation": "Synthetic arithmetic and evidence behavior only; not certified medical coding or legal rules",
+  "source_urls": [
+    "https://www.reddit.com/r/MedicalBill/comments/1nto1hi/"
+  ],
+  "reference_assets": [],
+  "gold_status": "authored_v1_not_domain_certified"
+}

@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "eval:look-into": "CAREUNFOLD_EVAL_LIVE=1 node --env-file=.env.local ./node_modules/.bin/vitest run tests/evals/look-into-charge.live.test.ts",
+    "eval:golden": "CAREUNFOLD_EVAL_LIVE=1 sh -c 'if [ -f .env.local ]; then node --env-file=.env.local ./node_modules/.bin/vitest run tests/evals/golden.live.test.ts; else ./node_modules/.bin/vitest run tests/evals/golden.live.test.ts; fi'",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file=.env.local --import tsx scripts/migrate.ts",
     "doctor": "node --env-file=.env.local --import tsx scripts/doctor.ts",

@@ -1,0 +1,202 @@
+{
+  "id": "S11",
+  "situation": 11,
+  "title": "Denial with zero responsibility and collections",
+  "user_prompt": "The EOB says zero but a collector wants payment.",
+  "fit": "Ready for uncertainty",
+  "audit_notes": "Consent applicability and added collection amount unresolved; do not label legal liability.",
+  "service_date": "2026-04-10",
+  "patient": "Reese Rivera",
+  "dob": "1991-08-14",
+  "member_id": "SYN-M011",
+  "account_id": "SYN-A011",
+  "claim_id": "SYN-C011",
+  "coverage": [
+    {
+      "plan": "Harbor Health Medical",
+      "member_id": "SYN-M011",
+      "effective_start": "2026-01-01",
+      "effective_end": "2026-12-31",
+      "relationship": "self",
+      "subscriber": "same as patient",
+      "medical_only": true
+    }
+  ],
+  "policy": "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+  "documents": [
+    {
+      "id": "S11-D01",
+      "kind": "coverage",
+      "title": "Enrollment confirmation and benefit excerpt",
+      "issued": "2026-01-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C011",
+      "account_id": "SYN-A011",
+      "encounter_id": "S11-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Patient date of birth": "1991-08-14",
+        "Member ID": "SYN-M011"
+      },
+      "body": [
+        "Plan: Harbor Health Medical. Member: SYN-M011. Effective 2026-01-01 through 2026-12-31. Relationship: self. Medical coverage only.",
+        "SYNTHETIC PLAN TERMS - apply only to this test family.",
+        "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+        "The patient is the account holder."
+      ],
+      "lines": [],
+      "relative_path": "S11/release_A/S11-D01.pdf"
+    },
+    {
+      "id": "S11-D02",
+      "kind": "visit",
+      "title": "Visit record",
+      "issued": "2026-04-10",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C011",
+      "account_id": "SYN-A011",
+      "encounter_id": "S11-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Encounter at Cedar Medical. Services are listed in the claim documents. This note does not establish insurer adjudication."
+      ],
+      "lines": [],
+      "relative_path": "S11/release_A/S11-D02.pdf"
+    },
+    {
+      "id": "S11-D03",
+      "kind": "eob",
+      "title": "Explanation of benefits",
+      "issued": "2026-04-24",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C011",
+      "account_id": "SYN-A011",
+      "encounter_id": "S11-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "THIS IS NOT A BILL. Patient payments made to the provider are not deducted from EOB responsibility.",
+        "Amounts not assigned to the patient remain subject to provider/plan reconciliation; this document is not evidence that the provider posted payment."
+      ],
+      "lines": [
+        {
+          "code": "CT",
+          "description": "CT scan",
+          "provider": "Cedar Medical",
+          "billed_cents": 48000,
+          "allowed_cents": 0,
+          "plan_paid_cents": 0,
+          "patient_responsibility_cents": 0,
+          "deductible_cents": 0,
+          "copay_cents": 0,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 0,
+          "reason": "Missing authorization; patient responsibility zero under this EOB",
+          "line_id": "SYN-C011-L1"
+        }
+      ],
+      "relative_path": "S11/release_A/S11-D03.pdf"
+    },
+    {
+      "id": "S11-D04",
+      "kind": "bill",
+      "title": "Patient account statement",
+      "issued": "2026-05-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C011",
+      "account_id": "SYN-A011",
+      "encounter_id": "S11-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 48000,
+        "Posted adjustments": 0,
+        "Posted insurer payments": 0,
+        "Posted patient payments": 0,
+        "Statement balance": 48000,
+        "Statement date": "2026-05-01",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S11/release_A/S11-D04.pdf"
+    },
+    {
+      "id": "S11-D05",
+      "kind": "collection",
+      "title": "Collection demand",
+      "issued": "2026-05-15",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C011",
+      "account_id": "SYN-A011",
+      "encounter_id": "S11-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Requested balance": 54000
+      },
+      "body": [
+        "Original creditor Cedar Medical. Itemization of the additional 60 not attached."
+      ],
+      "lines": [],
+      "relative_path": "S11/release_A/S11-D05.pdf"
+    }
+  ],
+  "stages": [
+    {
+      "id": "S11-A",
+      "release": "A",
+      "input_document_ids": [
+        "S11-D01",
+        "S11-D02",
+        "S11-D03",
+        "S11-D04",
+        "S11-D05"
+      ],
+      "status": "denial_collection_conflict",
+      "expected": {
+        "eob_responsibility_cents": 0,
+        "verified_patient_payments_cents": 0,
+        "supported_remaining_cents": 0,
+        "provider_statement_balance_cents": 54000
+      },
+      "required_findings": [
+        "EOB zero conflicts with collection demand. Difference from original bill is 60.",
+        "Request signed agreement, full denial remarks, and collection itemization."
+      ],
+      "missing_evidence": [
+        "Consent/agreement",
+        "60 balance breakdown"
+      ],
+      "forbidden_claims": [
+        "Denial automatically makes the patient liable",
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S11-D01",
+        "S11-D02",
+        "S11-D03",
+        "S11-D04",
+        "S11-D05"
+      ]
+    }
+  ],
+  "authoritative_ledger": [],
+  "source_basis": "Notion narrative; documents authored synthetically",
+  "external_validation": "Synthetic arithmetic and evidence behavior only; not certified medical coding or legal rules",
+  "source_urls": [
+    "https://www.reddit.com/r/MedicalBill/comments/1xhxiih/collections_for_a_bill_insurance_told_me_i_didnt/"
+  ],
+  "reference_assets": [],
+  "gold_status": "authored_v1_not_domain_certified"
+}

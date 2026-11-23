@@ -86,7 +86,7 @@ async function extractVisitWithOpenRouter(input: VisitExtractRequest): Promise<E
   try {
     const { text } = await openRouterChat({
       model: openRouterModels().extract,
-      provider: { ...openRouterPrivacy, only: ["google"] },
+      provider: { ...openRouterPrivacy, only: ["google-vertex", "google-ai-studio"] },
       plugins: input.mimeType === "application/pdf" ? [{ id: "file-parser", pdf: { engine: "native" } }] : undefined,
       response_format: {
         type: "json_schema",

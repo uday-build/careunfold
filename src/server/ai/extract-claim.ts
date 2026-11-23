@@ -44,7 +44,7 @@ export type ClaimExtractRequest = {
 export async function extractClaimEvidence(input: ClaimExtractRequest): Promise<ExtractedClaimFields> {
   const { text } = await openRouterChat({
     model: openRouterModels().extract,
-    provider: { ...openRouterPrivacy, only: ["google"] },
+      provider: { ...openRouterPrivacy, only: ["google-vertex", "google-ai-studio"] },
     plugins: input.mimeType === "application/pdf" ? [{ id: "file-parser", pdf: { engine: "native" } }] : undefined,
     response_format: {
       type: "json_schema",

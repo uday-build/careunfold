@@ -1,0 +1,19 @@
+case_id,plan,member_id,effective_start,effective_end,relationship,subscriber,medical_only
+S01,Harbor Health Medical,SYN-M001,2026-01-01,2026-12-31,self,same as patient,True
+S02,Harbor Health Medical,SYN-M002,2026-01-01,2026-12-31,self,same as patient,True
+S03,Harbor Health Medical,SYN-M003,2026-01-01,2026-12-31,self,same as patient,True
+S04,Harbor Health Medical,SYN-M004,2026-01-01,2026-12-31,child,Jordan Rivera,True
+S05,Harbor Health Medical,SYN-M005,2026-01-01,2026-12-31,self,same as patient,True
+S06,Harbor Health Medical,SYN-M006,2026-01-01,2026-12-31,self,same as patient,True
+S07,Harbor Health Medical,SYN-M007,2025-01-01,2025-12-31,self,same as patient,True
+S08,Harbor Health Medical,SYN-M008,2026-01-01,2026-12-31,self,same as patient,True
+S09,Harbor Health Medical,SYN-M009,2026-01-01,2026-12-31,self,same as patient,True
+S09,Meadow Community Plan,SYN-M009-B,2026-03-01,2026-12-31,self,,True
+S10,Harbor Health Medical,SYN-M010,2026-01-01,2026-12-31,self,same as patient,True
+S11,Harbor Health Medical,SYN-M011,2026-01-01,2026-12-31,self,same as patient,True
+S12,Harbor Health Medical,SYN-M012,2026-01-01,2026-12-31,self,same as patient,True
+S13,Harbor Health Medical,SYN-M013,2026-01-01,2026-06-30,self,same as patient,True
+S13,Harbor Health New Medical,SYN-M013,2026-07-01,2026-12-31,self,,True
+S14,Harbor Health Medical,SYN-M014,2026-01-01,2026-12-31,self,same as patient,True
+S15,Harbor Health Medical,SYN-M015,2026-01-01,2026-12-31,self,same as patient,True
+S16,Harbor Health Medical,SYN-M016,2026-01-01,2026-12-31,self,same as patient,True

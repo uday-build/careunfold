@@ -1,0 +1,2 @@
+# CareUnfold Golden Dataset v1
+16 situations from the updated Notion page. Open owner/FIT_REVIEW.md first, then owner/golden_dataset.json and expected_totals.csv. Authoritative JSON was persisted before PDFs were rendered. The reproducible builder is owner/build_dataset.py. tester_packets contains only fictional input records and tester instructions; owner contains answers, eval cases, validation and provenance. Share tester_packets only. All legal/coding outcomes remain bounded by authored evidence; expert review is outstanding.

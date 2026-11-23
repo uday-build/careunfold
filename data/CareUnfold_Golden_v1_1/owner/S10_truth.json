@@ -1,0 +1,283 @@
+{
+  "id": "S10",
+  "situation": 10,
+  "title": "Cash quote and anesthesia",
+  "user_prompt": "I paid the quoted cash price. Is anesthesia a duplicate?",
+  "fit": "Ready with incomplete quote stage",
+  "audit_notes": "Cash-pay case has no EOB; do not manufacture insurance adjudication.",
+  "service_date": "2026-04-10",
+  "patient": "Quinn Rivera",
+  "dob": "1991-08-14",
+  "member_id": "SYN-M010",
+  "account_id": "SYN-A010",
+  "claim_id": "SYN-C010",
+  "coverage": [
+    {
+      "plan": "Harbor Health Medical",
+      "member_id": "SYN-M010",
+      "effective_start": "2026-01-01",
+      "effective_end": "2026-12-31",
+      "relationship": "self",
+      "subscriber": "same as patient",
+      "medical_only": true
+    }
+  ],
+  "policy": "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+  "documents": [
+    {
+      "id": "S10-D01",
+      "kind": "coverage",
+      "title": "Enrollment confirmation and benefit excerpt",
+      "issued": "2026-01-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C010",
+      "account_id": "SYN-A010",
+      "encounter_id": "S10-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Patient date of birth": "1991-08-14",
+        "Member ID": "SYN-M010"
+      },
+      "body": [
+        "Plan: Harbor Health Medical. Member: SYN-M010. Effective 2026-01-01 through 2026-12-31. Relationship: self. Medical coverage only.",
+        "SYNTHETIC PLAN TERMS - apply only to this test family.",
+        "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+        "The patient is the account holder."
+      ],
+      "lines": [],
+      "relative_path": "S10/release_A/S10-D01.pdf"
+    },
+    {
+      "id": "S10-D02",
+      "kind": "visit",
+      "title": "Visit record",
+      "issued": "2026-04-10",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C010",
+      "account_id": "SYN-A010",
+      "encounter_id": "S10-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Encounter at Cedar Medical. Services are listed in the claim documents. This note does not establish insurer adjudication."
+      ],
+      "lines": [],
+      "relative_path": "S10/release_A/S10-D02.pdf"
+    },
+    {
+      "id": "S10-D03",
+      "kind": "note",
+      "title": "Patient recollection",
+      "issued": "2026-04-11",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C010",
+      "account_id": "SYN-A010",
+      "encounter_id": "S10-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "I understood the phone quote to include everything except pathology. I cannot find the written quote."
+      ],
+      "lines": [],
+      "relative_path": "S10/release_A/S10-D03.pdf"
+    },
+    {
+      "id": "S10-D04",
+      "kind": "receipt",
+      "title": "Payment receipt",
+      "issued": "2026-04-10",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C010",
+      "account_id": "SYN-A010",
+      "encounter_id": "S10-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Receipt ID": "S10-P1",
+        "Amount received": 180000,
+        "Intended account": "SYN-A010",
+        "Method": "Synthetic card ending 0000"
+      },
+      "body": [
+        "This receipt confirms payment received for the stated account; it is not proof of allocation in the current statement."
+      ],
+      "lines": [],
+      "relative_path": "S10/release_A/S10-D04.pdf"
+    },
+    {
+      "id": "S10-D05",
+      "kind": "bill",
+      "title": "Facility cash account statement",
+      "issued": "2026-05-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C010",
+      "account_id": "SYN-A010",
+      "encounter_id": "S10-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 180000,
+        "Posted adjustments": 0,
+        "Posted insurer payments": 0,
+        "Posted patient payments": 180000,
+        "Statement balance": 0,
+        "Statement date": "2026-05-01",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S10/release_A/S10-D05.pdf"
+    },
+    {
+      "id": "S10-D06",
+      "kind": "bill",
+      "title": "Anesthesia account statement",
+      "issued": "2026-05-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C010-AN",
+      "account_id": "SYN-A010-AN",
+      "encounter_id": "S10-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 45000,
+        "Posted adjustments": 0,
+        "Posted insurer payments": 0,
+        "Posted patient payments": 0,
+        "Statement balance": 45000,
+        "Statement date": "2026-05-01",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S10/release_A/S10-D06.pdf"
+    },
+    {
+      "id": "S10-D07",
+      "kind": "quote",
+      "title": "Signed cash estimate",
+      "issued": "2026-04-01",
+      "release": "B",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C010",
+      "account_id": "SYN-A010",
+      "encounter_id": "S10-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Facility cash price": 180000
+      },
+      "body": [
+        "Includes facility and endoscopy services only. Anesthesia and pathology excluded; billed by separate organizations. Anesthesia estimate 450."
+      ],
+      "lines": [],
+      "relative_path": "S10/release_B/S10-D07.pdf"
+    }
+  ],
+  "stages": [
+    {
+      "id": "S10-A",
+      "release": "A",
+      "input_document_ids": [
+        "S10-D01",
+        "S10-D02",
+        "S10-D03",
+        "S10-D04",
+        "S10-D05",
+        "S10-D06"
+      ],
+      "status": "quote_scope_unknown",
+      "expected": {
+        "eob_responsibility_cents": null,
+        "verified_patient_payments_cents": 180000,
+        "supported_remaining_cents": null,
+        "provider_statement_balance_cents": 45000
+      },
+      "required_findings": [
+        "Facility settled; distinct anesthesia organization requests 450.",
+        "No written quote scope; no duplicate or inclusion conclusion."
+      ],
+      "missing_evidence": [
+        "Written quote"
+      ],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S10-D01",
+        "S10-D02",
+        "S10-D03",
+        "S10-D04",
+        "S10-D05",
+        "S10-D06"
+      ]
+    },
+    {
+      "id": "S10-B",
+      "release": "B",
+      "input_document_ids": [
+        "S10-D01",
+        "S10-D02",
+        "S10-D03",
+        "S10-D04",
+        "S10-D05",
+        "S10-D06",
+        "S10-D07"
+      ],
+      "status": "separate_cash_service_documented",
+      "expected": {
+        "eob_responsibility_cents": null,
+        "verified_patient_payments_cents": 180000,
+        "supported_remaining_cents": 45000,
+        "provider_statement_balance_cents": 45000
+      },
+      "required_findings": [
+        "Written quote excludes anesthesia; distinct 450 matches its estimate.",
+        "No insurance EOB exists for these cash services."
+      ],
+      "missing_evidence": [],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S10-D01",
+        "S10-D02",
+        "S10-D03",
+        "S10-D04",
+        "S10-D05",
+        "S10-D06",
+        "S10-D07"
+      ]
+    }
+  ],
+  "authoritative_ledger": [
+    {
+      "transaction_id": "S10-P1",
+      "type": "patient_payment",
+      "amount_cents": 180000,
+      "received_date": "2026-04-10",
+      "intended_account": "SYN-A010",
+      "posted_account": "SYN-A010",
+      "posted_date": "2026-04-10",
+      "reversed": false
+    }
+  ],
+  "source_basis": "Notion narrative; documents authored synthetically",
+  "external_validation": "Synthetic arithmetic and evidence behavior only; not certified medical coding or legal rules",
+  "source_urls": [
+    "https://www.reddit.com/r/MedicalBill/comments/1xg0imm/paid_cash_price_for_endoscopy_but_received/"
+  ],
+  "reference_assets": [],
+  "gold_status": "authored_v1_not_domain_certified"
+}

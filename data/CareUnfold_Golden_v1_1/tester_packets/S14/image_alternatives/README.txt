@@ -1,0 +1,1 @@
+Alternative rendering of page 1 of the identically named PDF document. Not a new bill. Use the PDF for all pages. Upload this instead of the PDF only when testing image ingestion.

@@ -75,9 +75,22 @@ async function requestJson(url: string, body: Record<string, unknown>, failedMes
     throw new HttpError(502, "openrouter_failed", failedMessage);
   }
   if (!response.ok) {
-    throw new HttpError(502, "openrouter_failed", failedMessage);
+    throw new HttpError(502, "openrouter_failed", apiErrorMessage(data, failedMessage));
   }
   return data as Record<string, unknown>;
+}
+
+function apiErrorMessage(data: unknown, fallback: string) {
+  if (!data || typeof data !== "object") return fallback;
+  const error = (data as { error?: unknown }).error;
+  const text =
+    typeof error === "string"
+      ? error
+      : error && typeof error === "object" && "message" in error && typeof error.message === "string"
+        ? error.message
+        : "";
+  const trimmed = text.replace(/\s+/g, " ").trim().slice(0, 240);
+  return trimmed ? `${fallback} ${trimmed}` : fallback;
 }
 
 function messageText(data: Record<string, unknown>) {

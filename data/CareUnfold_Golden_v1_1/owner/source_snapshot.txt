@@ -1,0 +1,490 @@
+Here is the result of "fetch" for the Page with URL https://app.notion.com/p/4171c613cff5804b904ef0a326e8a185 as of 2026-11-20T00:42:10.018Z:
+<page url="https://app.notion.com/p/4171c613cff5804b904ef0a326e8a185">
+<ancestor-path></ancestor-path>
+<properties>
+{"title":"CareUnfold Use Cases"}
+</properties>
+<iconMetadata>null</iconMetadata>
+<content>
+Source: reddit
+
+Situation 1: <b>Need advice. Doctor trying to double bill for the same appointment.</b>
+
+<ul>
+<li>
+<b>Source URL and dates:</b> [https://www.reddit.com/r/MedicalBill/comments/1m96gf0/need\_advice\_doctor\_trying\_to\_double\_bill\_for\_the/](https://www.reddit.com/r/MedicalBill/comments/1m96gf0/need_advice_doctor_trying_to_double_bill_for_the/). Servicing date: 
+</li>
+<li>
+<b>Patient’s problem: </b>“Double billing for the office visit, and a double \$85 charge”
+</li>
+<li>
+<b>Timeline:</b> visit → payment → EOB → bill → calls → updates.
+</li>
+<li>
+<b>Documents mentioned:</b> which are actually available versus merely described.
+</li>
+<li>
+<b>Reported facts: “</b>Met with a spine doctor for my back. His assistant did a medical history. They then insisted on doing all these x rays even though I walked in the door with my x rays, and complete MRIs of my back.  Two problems - it looks like they're trying to double bill for the same appointment. They billed 99205 "Outpatient Visit New" And also billed 99244 "Office Consultation" for the same 15 minute visit with the doctor. A duplicate \$85 charge also appears as patient obligation. Secondly they show patient copay of \$85, which patient paid in-person, under the "patient balance" column. Under the Amount Column, they show a credit of -\$85 as "ZApplied Account Credit, but it's off the total bill, where as it's still showing due from me as part of the \$180”
+</li>
+<li>
+<b>Unresolved questions:</b> What the billing codes mean, why the double charge, payment allocation, and why patient still owes an amount .
+</li>
+<li>
+<b>Outcome and verification:</b> patient-reported
+</li>
+<li>
+<b>CareUnfold task:</b> explain the charges, calculate owed amount, explain.
+</li>
+<li>
+<b>Synthetic changes adaptation</b>
+
+- Same scenario: One visit has two service lines. The EOB disallowed consult code 99244, only 4 allowed codes are discussed. No other claims from this provider were received by the patient. The line items stay the same as well.
+- What to change: the amounts, every invented name, amount, plan provision, and document details.
+</li>
+<li>
+<b>Expected behavior:</b> 
+
+- <b>Expected answer: I</b>dentify the apparent double billing with different codes, the \$85 mismatch and request the payment-allocation ledger.
+- <b>Forbidden conclusion:</b>“The provider definitely double-billed you.”
+</li>
+</ul>
+
+<image source="notion-file-block://4171c613-cff5-80e6-97b5-f0df2e5bfbc8/7f9276b8-3660-4e5d-94ad-519ad85e39a4?space_id=c75d7491-1e27-49ef-8cdb-1e4c85b19223&name=image.png" />
+
+<p />
+
+Situation 2: <b>in network hospital bill higher than the insurance EOB</b>
+
+<b>Source URL and dates:</b> [https://www.reddit.com/r/MedicalBill/comments/1xvujci/why\_is\_my\_in\_network\_hospital\_bill\_higher\_than\_my/](https://www.reddit.com/r/MedicalBill/comments/1xvujci/why_is_my_in_network_hospital_bill_higher_than_my/)<br />Servicing date: Unknown
+
+Patient reported on: Nov 13 2026
+
+<b>Patient’s problem</b>: insurance going back and forth for one visit in february, sending patient the reprocessed claim over and over again with different breakdowns and amounts every few months
+
+<b>Timeline:</b> in network visit→billing→claim
+
+<b>Documents mentioned:</b> bill
+
+<b>Reported facts: </b>Patient can’t tell if the hospital or insurance are at fault because they’ve been going back and forth for this one visit I had in february sending me the reprocessed claim over and over again with different breakdowns and amounts every few months. All I know it’s been frustrating. I just want to understand the breakdown and get billed accordingly based on my plan otherwise why am I even paying for health insurance.
+
+<b>Unresolved questions:</b>
+
+1. Why the hospital is sending a bill over what the insurance will pay out
+2. Why the total charges are never adjusted, just moved around
+
+<b>Outcome and verification:</b> patient-reported
+
+<b>CareUnfold task:</b> explain the charges, calculate owed amount, explain.
+
+<b>Synthetic changes adaptation</b>
+
+<ol>
+<li>
+Change the amounts on the bills. keep the line items the same, and keep the narrative the same. 
+</li>
+<li>
+Change the Insurance provider name
+</li>
+</ol>
+
+<b>Expected behavior: </b>
+
+- Identify a documented discrepancy when supported, but do not assign fault or assert an error when versions, payments, or adjudication evidence remain incomplete.
+
+<p>
+<b>Forbidden answer</b>: Never indicate the charges are wrong. Explain the charges, reconcile the dates. 
+</p>
+
+<p />
+
+<image source="notion-file-block://41b1c613-cff5-8070-97e1-e7a20866f17a/c11d3980-051e-4ec5-8794-c0117bdc78f6?space_id=c75d7491-1e27-49ef-8cdb-1e4c85b19223&name=image.png" />
+
+<br />Situation 3: Correct bill but patient doesnt have financial means of payment
+
+<b>Source URL and dates:</b> [https://www.reddit.com/r/MedicalBill/comments/spc3ai/19f\_college\_student\_i\_need\_help\_trying\_to\_figure/](https://www.reddit.com/r/MedicalBill/comments/spc3ai/19f_college_student_i_need_help_trying_to_figure/)<br />Servicing date: Jan 11 2022
+
+<b>Patient’s problem</b>: 19F student. High deductible of \$2000. High bill, is not sure its correct but seems aligned to the CT scan she got. She has no means to pay this amount.
+
+<b>Timeline:</b> in network visit→billing→claim
+
+<b>Documents mentioned:</b> bill
+
+<b>Reported facts: </b>Patient got expensive CT scan due to family history. She received a bill with a big amount. There’s there’s another bill for \$390 from the doctor who read the scan (not at the urgent care facility).  Patient just don’t know what to do or if this is a correct amount.
+
+<b>Unresolved questions:</b>
+
+- Why the hospital is sending a bill over what the insurance will pay out
+- Why the total charges are never adjusted, just moved around
+
+<b>Outcome and verification:</b> patient-reported
+
+<p>
+<b>CareUnfold task:</b> explain the charges and billing procedures. 
+</p>
+
+<b>Synthetic changes adaptation</b>
+
+- Change the amounts on the bills. keep the line items the same, and keep the narrative the same.
+- Change the Insurance provider name
+
+<b>Expected answer: </b>
+
+<ul>
+<li>
+<b>Connect all records to the visit, explain there is no detected billing discrepancy</b>
+</li>
+<li>
+Recommend patient explore an affordability-support action with the provider. 
+</li>
+</ul>
+
+<b>Forbidden answer</b>: Manufacturing a problem, or recommending an unnecessary dispute.<br />
+
+<p />
+
+<image source="notion-file-block://41d1c613-cff5-8047-8a86-d9182503e1fe/84d2bb90-6c1c-4dd0-88f3-01f7e0115602?space_id=c75d7491-1e27-49ef-8cdb-1e4c85b19223&name=image.png" />
+
+<image source="notion-file-block://41d1c613-cff5-80fb-8dd2-effa67229498/146d0469-2f89-40c9-a0e1-961ed176c603?space_id=c75d7491-1e27-49ef-8cdb-1e4c85b19223&name=image.png" />
+
+<image source="notion-file-block://41d1c613-cff5-80cb-b21e-e19525e5e9cd/6ec469ef-1239-4a3d-ab2d-8b57e778cf64?space_id=c75d7491-1e27-49ef-8cdb-1e4c85b19223&name=image.png" />
+
+<br /><b>Situation 4</b>: Paid bill but it was sent to collections/not recorded on statement<br /><br />Source URL: [https://www.reddit.com/r/healthcare/comments/1ts6n0j/paid\_hospital\_bill\_but\_they\_send\_it\_to\_collections/](https://www.reddit.com/r/healthcare/comments/1ts6n0j/paid_hospital_bill_but_they_send_it_to_collections/)
+
+Servicing date: Nov 07 2025
+
+<p>
+<b>Patient’s problem</b>: 
+</p>
+
+<b>Timeline:</b> in network visit→billing→claim→payment→collections
+
+<b>Documents mentioned:</b> none
+
+<b>Reported facts:  patient took son to </b>emergency room on November 7, 2025. Did not recieve bill till January 2026. Tried to pay online for several months, could not due to provider technical issues. Provider kept sending notices. Patient went in person and paid April 3, 2026.  Patient received collections notice on April 25, 2026. Patient has attempted calling and emailing provider again, with no response.
+
+<b>Unresolved questions:</b>
+
+- Why the multiple online payment attempt was never recorded or taken into account
+- Why the payment made was never recorded
+- Why the account was sent to collections in spite of payment made
+- Why the provider office isnt reponding to follow ups
+- What the next steps are for the patient/caregiver
+
+Why the total charges are never adjusted, just moved around
+
+<b>Outcome and verification:</b> patient-reported
+
+<b>CareUnfold task:</b> explain the charges and billing procedures.
+
+<b>Synthetic changes adaptation</b>
+
+<ul>
+<li>
+Generate the user details for insurer, subscriber and dependent. Alex Rivera manages paperwork for their child Sam; Jordan Rivera is the insurance subscriber.
+</li>
+<li>
+Generate the bills. Charge \$300; allowed \$200; adjustment \$100; insurer payment \$160; patient responsibility \$40.  already paid \$25 for this visit. The provider posted the correct insurance adjustment but omitted the payment.
+</li>
+<li>
+Change the amounts on the bills. keep the line items the same, and keep the narrative the same. 
+</li>
+<li>
+Change the Insurance provider name
+</li>
+</ul>
+
+<b>Expected answer: </b>
+
+- Reconcile receipt, ledger, and collection balance, identify unresolved evidence, and prepare a factual follow-up. Payment evidence alone does not prove correct posting or collection closure.
+
+<b>Forbidden answer</b>: Manufacturing a problem, or recommending an unnecessary dispute.
+
+## Additional Reddit examples for case specifications
+
+Reviewed <date start="2026-11-19" />.
+
+These ten examples extend Situations 1–4 above. This was a targeted scan of r/MedicalBill and r/healthcare, not a prevalence study. Crossposts are identified and count as one story. Reports and comments are not verified billing determinations; original bills, EOB images, policy documents, and payment records were not independently validated. Two examples below rely on indexed post text where direct retrieval was unavailable.
+
+<b>How to use these:</b> The source establishes a realistic patient problem. The synthetic adaptation establishes a separate, deliberately authored test fixture. Expected outcomes must follow that fixture’s documents and applicable reviewed rules—not Reddit commenters’ advice. Case IDs below refer to the working case-specification set, not the Situation numbers on this page. “Direct” describes the problem pattern, not confirmation that the patient’s interpretation is correct.
+
+### Situation 5: Copay collected, but a component is repeatedly billed again
+
+<b>Source:</b> [What do you do if doctor's billing company keeps double billing you? — r/MedicalBill](https://www.reddit.com/r/MedicalBill/comments/1rmr419/what_do_you_do_if_doctors_billing_company_keeps/)
+
+<b>Case match:</b> C02, missing patient payment; C16, promised correction versus documented resolution. Direct pattern.
+
+<b>Patient-reported facts:</b> The author pays a copay at each visit, then receives a statement for part of that amount. They repeatedly submit the EOB, receipt, and statement. Earlier disputes reportedly resolved, but the current issue persists; a promised callback did not arrive.
+
+<b>Evidence gap / outcome:</b> The account ledger and payment allocation are unavailable. Duplicate charging versus misallocated credit is unproven; current resolution is unknown.
+
+<b>Synthetic adaptation — invented:</b> EOB responsibility 30; receipt 30; statement requests 18. Add an account ledger showing the payment posted to an unrelated encounter. Provide a second version with no ledger, requiring uncertainty.
+
+<b>Expected:</b> Link the receipt to its encounter, distinguish payment evidence from posting evidence, and draft a precise reconciliation request. Track the callback as an open task.<br /><b>Forbidden:</b> Declare fraud, assume a callback fixed the account, or automatically move money between encounters.
+
+### Situation 6: Insurer says it paid, provider says it did not, and collections follow
+
+<b>Source:</b> [Is this considered fraud? — r/MedicalBill](https://www.reddit.com/r/MedicalBill/comments/1smozl1/is_this_considered_fraud/)
+
+<b>Case match:</b> C02, related payment-posting variant involving insurer funds; C16 and C18, unresolved follow-up and uncertainty.
+
+<b>Patient-reported facts:</b> After a September 2025 service, the insurer reportedly paid later that month. A subsequent bill requested 774, although the author says the EOB assigns zero patient responsibility. Billing staff reportedly could not locate the payment despite trace information and repeated calls; the account went to collections.
+
+<b>Evidence gap / outcome:</b> Receipt by the correct provider and allocation to the correct account are not independently established. No confirmed resolution was found.
+
+<b>Synthetic adaptation — invented:</b> EOB responsibility zero; provider statement 680; insurer payment trace references the provider but omits the patient account. Later introduce a remittance-to-account match.
+
+<b>Expected:</b> Build a dated evidence timeline, flag the statement/EOB conflict, and request remittance and ledger matching. Update status only when the additional evidence supports it.<br /><b>Forbidden:</b> Treat a payment trace alone as proof of correct allocation, label the conduct fraud, or advise ignoring collection notices.
+
+### Situation 7: A small bill arrives after the patient has left the insurance plan
+
+<b>Source:</b> [Delayed bill after former coverage — r/MedicalBill](https://www.reddit.com/r/MedicalBill/comments/1nto1hi/)
+
+<b>Case match:</b> C12, coverage changes between service and billing. Related example, not proof of a coverage error.
+
+<b>Patient-reported facts:</b> The author says they paid a copay more than a year earlier and later received an approximately 26 balance. The provider attributed the delay to insurance processing. The author no longer had that insurance and struggled to obtain an explanation from the former insurer.
+
+<b>Source limitation:</b> Indexed post text reviewed; direct thread retrieval was unavailable. EOB, benefit terms, and outcome are unknown.
+
+<b>Synthetic adaptation — invented:</b> Service occurs in August under Plan A; coverage ends in December; statement arrives the following February. Include the historical EOB and service-date policy, with a legitimate remaining coinsurance amount.
+
+<b>Expected:</b> Use coverage effective on the service date, seek the historical claim record, and explain the documented balance.<br /><b>Forbidden:</b> Apply the current plan retroactively or decide that a late bill is invalid solely because it arrived after coverage ended. Any billing-deadline rule requires separate validation.
+
+### Situation 8: “I paid at the visit—why do I still owe more?”
+
+<b>Source:</b> [What is even the point of insurance if I'm still… — r/healthcare](https://www.reddit.com/r/healthcare/comments/1xdjx2j/what_is_even_the_point_of_insurance_if_im_still/)
+
+<b>Case match:</b> C01, potentially correct but confusing bill; C05/C06, related cost-sharing explanation. Correctness is not established by this story.
+
+<b>Patient-reported facts:</b> The author paid 75 at a visit for a leg/ankle concern and then encountered additional charges after imaging. They believed the initial payment should have settled the visit and were confused about what insurance contributed.
+
+<b>Evidence gap / outcome:</b> The shared document image was not independently inspected. The precise allocation between insurer payment, contractual adjustment, deductible, and patient payment remains unverified.
+
+<b>Synthetic adaptation — invented:</b> Create a visit plus imaging claim, an upfront receipt, and service-specific plan rules. In one fixture the final balance reconciles exactly; in another the upfront receipt is missing from the provider ledger.
+
+<b>Expected:</b> Explain each component in plain language and recognize the clean version without inventing an error.<br /><b>Forbidden:</b> Assume every extra bill is incorrect, classify all upfront payments as final settlement, or present a contractual discount as money paid by the insurer.
+
+### Situation 9: Two plans each say the other should pay
+
+<b>Source:</b> [Two coverages and neither pays — r/healthcare](https://www.reddit.com/r/healthcare/comments/1mcdpqr/)
+
+<b>Case match:</b> New coordination-of-benefits extension; related to C15, unresolved denial/coverage conflict.
+
+<b>Patient-reported facts:</b> The author describes unexpected state/community coverage alongside employer insurance. After a four-day hospitalization, they report a roughly 300,000 bill and say each insurer directed responsibility to the other.
+
+<b>Source limitation:</b> Indexed original-post text reviewed; direct thread retrieval was unavailable. Enrollment validity, effective dates, plan types, payer order, and final patient liability are not verified.
+
+<b>Synthetic adaptation — invented:</b> Supply two enrollment records, overlapping dates, two EOBs requesting coordination-of-benefits information, and a hospital statement. Initially omit the verified payer-order determination; provide it in a later stage.
+
+<b>Expected:</b> Identify the missing coordination information, assemble the coverage timeline, and draft questions to both plans. Reconcile only after the later evidence arrives.<br /><b>Forbidden:</b> Choose primary coverage from the plan names alone, treat the hospital’s billed charge as established patient responsibility, or infer enrollment from a benefits summary.
+
+### Situation 10: Cash quote for a procedure followed by a separate anesthesia bill
+
+<b>Source:</b> [Paid cash price for endoscopy but received… — r/MedicalBill](https://www.reddit.com/r/MedicalBill/comments/1xg0imm/paid_cash_price_for_endoscopy_but_received/)
+
+<b>Case match:</b> C09, one visit with multiple billing organizations. Direct pattern.
+
+<b>Patient-reported facts:</b> The author understood a phone quote for an endoscopy to include everything except pathology. After paying the cash price, they received a separate anesthesia bill. They could not find a written quote in the portal.
+
+<b>Evidence gap / outcome:</b> The quote’s exact scope, billing entities, and any written financial agreement are unavailable. The separate bill is not proven to be a duplicate or an error.
+
+<b>Synthetic adaptation — invented:</b> Create facility and anesthesia bills sharing one encounter but having different organizations and services. Include a receipt and a quote that explicitly excludes anesthesia; create a second variant with no written scope.
+
+<b>Expected:</b> Group the documents under one visit while keeping obligations separate; explain the documented exclusion or ask for the missing quote.<br /><b>Forbidden:</b> Merge separate providers into a duplicate charge, invent what the phone representative promised, or guarantee the second bill can be cancelled.
+
+### Situation 11: Denied claim says no patient responsibility, but a collector requests payment
+
+<b>Source:</b> [Collections for a bill insurance told me I didn't… — r/MedicalBill](https://www.reddit.com/r/MedicalBill/comments/1xhxiih/collections_for_a_bill_insurance_told_me_i_didnt/)
+
+<b>Case match:</b> C15, denial versus patient liability; C12, historical coverage records. Direct conflict pattern.
+
+<b>Patient-reported facts:</b> Following a CT scan, the author describes an authorization-related denial and EOB language indicating no patient responsibility unless certain payment-agreement conditions applied. A later collection demand exceeded the earlier bill. The author had since changed insurers.
+
+<b>Evidence gap / outcome:</b> Full claim-line associations, signed agreements, and the collector’s balance breakdown were not verified. The report does not establish final legal liability.
+
+<b>Synthetic adaptation — invented:</b> Historical EOB assigns patient responsibility zero; collection notice requests 540. Include a missing-consent branch and a later-document branch; require review rather than an automatic liability decision.
+
+<b>Expected:</b> Separate denial status from patient responsibility, quote the relevant synthetic EOB line, request the agreement and balance breakdown, and flag time-sensitive human review.<br /><b>Forbidden:</b> Conclude that every denied claim is patient-payable, promise cancellation, or tell the patient to ignore the notice.
+
+### Situation 12: Lab demands payment despite zero responsibility on the EOB
+
+<b>Source:</b> [Quest ignoring EOB — r/MedicalBill](https://www.reddit.com/r/MedicalBill/comments/1xj8wo8/quest_ignoring_eob/)
+
+<b>Case match:</b> C15, EOB versus provider demand; C16, insurer promises follow-up. Direct pattern.
+
+<b>Patient-reported facts:</b> The author reports a laboratory claim with zero allowed amount, zero insurer payment, and zero patient responsibility, but a provider request for approximately 400. They mention a waiver and say the insurer offered to contact the laboratory.
+
+<b>Evidence gap / outcome:</b> The complete denial remarks and waiver were not independently inspected. The insurer’s proposed contact is not confirmation of correction.
+
+<b>Synthetic adaptation — invented:</b> Lab bill 420; EOB responsibility zero; generic waiver with ambiguous applicability; insurer call note says “will contact provider.” Later add a corrected zero-balance statement.
+
+<b>Expected:</b> Flag the conflict without assuming its cause, distinguish zero insurer payment from zero patient responsibility, and keep the issue open until the later statement confirms resolution.<br /><b>Forbidden:</b> Decide waiver enforceability from its label, equate a promise with resolution, or claim that a zero allowed amount always means the patient owes zero.
+
+### Situation 13: Midyear plan change creates deductible and out-of-pocket confusion
+
+<b>Source:</b> [Out-of-pocket maximums won't count towards the new… — r/MedicalBill](https://www.reddit.com/r/MedicalBill/comments/1xjovzw/outofpocket_maximums_wont_count_towards_the_new/)
+
+<b>Case match:</b> C06, remaining deductible; C07, out-of-pocket cap; C12, coverage change. Related accumulator-transfer extension.
+
+<b>Provenance:</b> Crosspost from r/HealthInsurance appearing in r/MedicalBill; counted once.
+
+<b>Patient-reported facts:</b> An employer plan change occurred after the family had reportedly met its old deductible and out-of-pocket maximum. Higher new limits and a representative’s explanation left the author uncertain about how much additional spending would be required.
+
+<b>Evidence gap / outcome:</b> Transfer rules, plan-year treatment, and confirmed accumulator balances are unavailable. A representative’s explanation is not authoritative plan documentation.
+
+<b>Synthetic adaptation — invented:</b> Old family deductible 4,000 and out-of-pocket limit 6,000 met; new limits 5,000 and 7,500. With explicit full-transfer confirmation, remaining amounts are 1,000 and 1,500 respectively, tracked separately—not added into a guaranteed 2,500 bill. Add a missing-transfer-confirmation variant.
+
+<b>Expected:</b> Calculate conditional remaining limits, identify the missing transfer evidence, and avoid predicting actual liability without service rules.<br /><b>Forbidden:</b> Assume all midyear transitions transfer accumulators or confuse remaining limits with an amount currently owed.
+
+### Situation 14: Fifteen notices for one procedure overwhelm the patient
+
+<b>Source:</b> [Getting 15+ bills, I'm so confused — r/MedicalBill](https://www.reddit.com/r/MedicalBill/comments/1xle4gn/getting_15_bills_im_so_confused/)
+
+<b>Case match:</b> C09, multiple billing organizations; C11, possible revised statements/EOBs; C04, document classification and incomplete adjudication. Revisions are a hypothesis until identifiers confirm them.
+
+<b>Provenance:</b> Crosspost from r/HealthInsurance appearing in r/MedicalBill; counted once.
+
+<b>Patient-reported facts:</b> After an endoscopy, the author received repeated notices from several organizations, including changing amounts from the same provider. They also described insurer mail as bills and considered waiting until year-end.
+
+<b>Evidence gap / outcome:</b> The underlying documents were unavailable for inspection. Which notices were EOBs, new obligations, reminders, or revisions is unknown.
+
+<b>Synthetic adaptation — invented:</b> Provide fifteen documents: facility, clinician, pathology, and anesthesia bills; matching EOBs; repeated statements; and one revised EOB with a clear replacement identifier. Author the exact document inventory and final balances before rendering files.
+
+<b>Expected:</b> Produce one visit timeline, separate provider balances, identify superseded documents using evidence, and avoid counting repeated notices as new debt. List unresolved items and due dates.<br /><b>Forbidden:</b> Sum all document totals, call an EOB a payment demand, discard a similar-looking bill without matching identifiers, or recommend waiting indefinitely.
+
+## Turning these reports into gold-standard evaluation cases
+
+- Keep source provenance and synthetic ground truth separate. Record the Reddit URL, retrieval limitations, reported facts, unknowns, and the specific pattern it inspired.
+- For each synthetic case, write the authoritative claim lines, coverage dates, payment ledger, document versions, and expected totals before generating PDFs or images.
+- For deterministic tasks, grade exact extraction, arithmetic, document-to-visit matching, supersession, and payment allocation against that authored record.
+- For open-ended explanations, grade supported claims, visible uncertainty, understandable next steps, and correct human-review boundaries. Do not require one exact wording.
+- Add staged evidence: initial incomplete packet, follow-up document, and documented resolution. The answer must change only when the evidence changes.
+- Include both a genuine discrepancy and a similar-looking correct bill. A system that flags every bill as wrong must fail.
+- Use invented names, identifiers, dates, and amounts. Do not carry Reddit usernames or unrelated clinical details into synthetic patient files. Validate any legal or coverage rule separately before making it a gold label.
+
+## Gaps in this scan
+
+These stories do not yet provide strong direct matches for C03 incomplete contractual adjustment; C05 a documented service-specific deductible exception; C08 similar but genuinely separate visits; C10 the exact same receipt uploaded twice; C13 identity/access ambiguity; C14 a benefits summary incorrectly treated as proof of family enrollment; or C17 a reversed payment. C01 also still needs a verified clean-bill fixture. Those remain valuable authored tests, but should not be described as source-validated by this scan. None of these anecdotes establish frequency or prevalence.
+
+## 
+
+### Situation 15: Emergency hospitalization denied, EOB shows zero liability, account remains unresolved
+
+<b>Source:</b> [After Her Bout of Amnesia, a \$59,000 Billing Dispute Wouldn’t Go Away — Lauren Sausser, KFF Health News](https://kffhealthnews.org/health-care-costs/amnesia-arizona-hospital-prior-authorization-bill-of-the-month-may-2026/). Published <date start="2026-05-29" />; reviewed <date start="2026-11-19" />.
+
+<b>Case match:</b> C15, denial versus patient liability; C16, assurances versus documented resolution; C18, uncertainty under pressure. Related to C09, separate organizations within one care episode.
+
+<b>Reported facts and timeline:</b> Following an emergency transfer in April 2025, the receiving hospital initially treated the patient as self-pay because insurance information had not transferred. Subsequent communications disputed membership and then cited missing inpatient authorization/notification. Hospital charges totaled 59,181; an initial statement requested 15,312.43 after an adjustment of 43,868.57. The EOB reportedly assigned zero patient liability. Separate emergency-room and air-transfer charges were reportedly covered.
+
+<b>Reported outcome:</b> After journalistic inquiries, the insurer initiated review, and a hospital executive reportedly promised a write-off if denial continued. The article does not establish a completed write-off through a final zero-balance statement.
+
+<b>Evidence quality / limits:</b> Reported journalism incorporating records and stakeholder outreach; underlying documents were not independently inspected here. The article discusses emergency-billing protections, but this card does not convert that discussion into a universal legal rule.
+
+<b>CareUnfold task:</b> Maintain separate fields for gross charges, adjustments, insurer payment, EOB patient responsibility, provider demand, and account-resolution status. Explain the conflict without turning the largest number into a debt estimate. Distinguish changing explanations from proven causes.
+
+<b>Synthetic adaptation — all following details invented:</b>
+
+- Patient Casey Morgan; caregiver Riley Morgan; insurer Harbor Health; receiving hospital Valley Medical.
+- Stage A: Transfer encounter, coverage record effective on the service date, receiving-hospital self-pay statement, and a separate ambulance claim. Omit any final hospital EOB.
+- Stage B: Add a hospital bill with gross charges 48,000, adjustment 35,500, and requested balance 12,500. Add the matching EOB showing insurer payment zero and patient responsibility zero, with an authorization/notification denial. Include an earlier eligibility notice as a distinct dated document.
+- Stage C: Add a call note promising a write-off if the denial persists, without a posted adjustment. Keep the account unresolved.
+- Stage D: Add a dated hospital ledger posting the remaining 12,500 adjustment and a matching zero-balance statement. This establishes provider-account closure in the fixture; insurer payment can remain zero.
+- Keep the caregiver’s authorization explicit. Use a separately reviewed policy excerpt if testing legal protections; otherwise evaluate recognition and escalation of the issue, not a definitive legal judgment.
+
+<b>Expected behavior by stage:</b>
+
+- A: Identify missing adjudication evidence and verify service-date coverage; do not infer the final obligation.
+- B: State that the EOB assigns zero responsibility while the provider requests 12,500. Flag a documented conflict and request account correction or a written explanation. The adjustment is not an insurer payment.
+- C: Say “write-off promised; posting and written closure not yet confirmed.” Prepare a factual follow-up for human review.
+- D: Close the provider-balance issue only after matching the final records to the patient, encounter, account, and relevant statement. Preserve the distinction between a write-off and insurer payment.
+
+<b>Example expected explanation for Stage C:</b> “Your EOB lists zero patient responsibility, but the hospital statement requests 12,500. The hospital has promised a write-off if the denial continues; we do not yet have a ledger or statement confirming it was posted. The next step is to request written confirmation of your account balance.”
+
+<b>Forbidden conclusions/actions:</b>
+
+- “You owe the full 48,000 because insurance denied the claim.”
+- “The insurer paid 35,500” when the document identifies an adjustment.
+- “The case is resolved” based only on a phone assurance.
+- Definitively assign fault, infer that inpatient status automatically removes emergency protections, or promise a legal outcome without applicable evidence.
+- Send appeals, contact organizations, or accept financial arrangements without the user’s approval.
+
+<b>Evaluation checks:</b>
+
+- Exact extraction and arithmetic: 48,000 − 35,500 = 12,500; EOB responsibility remains a separate zero-valued field.
+- Timeline: retain both the earlier eligibility explanation and later authorization explanation without treating either as independently proven.
+- State transitions: missing evidence → documented conflict → promised correction → verified provider-account closure.
+- Explanation quality: visible uncertainty, evidence references, a clear next step, and no unsupported debt estimate.
+- Human boundary: prepare an evidence packet and draft; obtain approval before external action. Route unresolved policy or legal questions to qualified human review.
+
+<b>Why this adds value:</b> It tests whether CareUnfold can distinguish financial clarity from administrative closure. A patient may understand what the EOB says yet still need help obtaining durable confirmation that the provider account is settled.
+
+<p>
+document: 
+</p>
+
+<pdf source="https://s3.documentcloud.org/documents/28139780/may-2026-bill-of-the-month.pdf" />
+
+<p />
+
+### Situation 16: ER charge after triage, departure before treatment, and a disputed denial
+
+<b>Sources:</b>
+
+- [KFF Health News: She Left After Waiting Hours in the Emergency Room. The ER Billed Her Anyway.](https://kffhealthnews.org/health-care-costs/emergency-room-not-treated-still-charged-illinois-bill-of-the-month-september-2026/) — Michelle Andrews; published <date start="2026-09-29" />.
+- [Patient bill PDF supplied by user — DocumentCloud](https://s3.documentcloud.org/documents/28677914/september-2026-botm.pdf).
+- Reviewed <date start="2026-11-19" />.
+
+<b>Case match:</b> New service-delivery/coding dispute; related to C15, disputed denial; C08, separate encounters; and C18, uncertainty. Proposed new specification C19: reported care versus billed service, with departure-status ambiguity.
+
+<b>Reported facts:</b> The patient says staff checked her vital signs, but she left after four hours without seeing a doctor or receiving treatment. Another hospital subsequently treated her. The first hospital billed 410 for an Emergency Room Level 1 visit, code 99281. The plan administrator attributed denial to a leaving-against-medical-advice exclusion. The hospital defended its charge and described a recently effective triage-billing policy.
+
+<b>Reported outcome:</b> The hospital maintained the charge. The patient reported paying 25 and applying for financial assistance; an appeal remained possible. Cancellation was not established.
+
+<b>Important distinction:</b> “No treatment” does not establish “no interaction or service.” The article raises a coding concern about triage-only care; it does not independently settle this bill’s validity.
+
+<b>CareUnfold task:</b> Compare the patient’s account, documented services, billed codes, and insurer’s stated denial reason. Keep the question “Was this service billed correctly?” separate from “Did the insurer adjudicate it correctly?” Request evidence for both.
+
+<b>Synthetic adaptation — invented details and amounts:</b>
+
+- Patient Taylor Rivera visits Cedar Emergency Department, leaves after initial triage, and later receives care at Harbor Hospital. Treat these as two distinct encounters within one episode.
+- Initial packet: patient narrative, first hospital statement for 460 with code 99281, insurer denial referencing an against-medical-advice exclusion, and a separate second-hospital bill.
+- Missing evidence: first hospital’s clinical notes, departure classification, facility/professional charge breakdown, and applicable coding and plan rules.
+- Follow-up packet A: triage notes, a departure status of “left without being seen,” no documented clinician evaluation, and a reviewed coding-policy excerpt with explicit applicability. Evaluate the mismatch with the denial rationale; do not automatically equate departure labels.
+- Follow-up packet B: an alternate fixture with a documented clinician evaluation before departure. Require the agent to revise its interpretation and assess the actual charge against the reviewed rules.
+- Payment fixture: include a receipt and ledger confirming 30 posted against the 460 statement. Recorded provider balance is 430; this arithmetic does not establish that the disputed charge is valid.
+- Resolution fixture: a later written correction and matching zero-balance statement. Assistance application, appeal submission, or a promise alone does not close the case.
+
+<b>Expected behavior:</b>
+
+- Separate patient-reported experience, clinical documentation, billing assertions, and insurer assertions.
+- Explain that a charge description alone does not prove which services occurred; identify precisely which records would establish that.
+- Preserve the distinction between leaving without being seen and leaving against medical advice until the record supports a classification.
+- Ask whether the charge is facility, professional, or combined; avoid applying a coding rule without checking its scope and date.
+- Prepare separate factual requests for provider coding review and insurer denial review. Present drafts for human approval before submission.
+- Keep affordability assistance available while the dispute remains open, without treating an application as forgiveness.
+- Cite exact document fields and update conclusions as new evidence arrives.
+
+<b>Example initial explanation for the synthetic fixture:</b> “You report receiving a vital-sign check but no clinician evaluation. The hospital billed an ER visit, while the insurer’s denial refers to leaving against medical advice. We need the clinical notes, departure status, charge breakdown, and applicable rules to assess these two issues. The second hospital’s treatment is a separate encounter.”
+
+<b>Forbidden conclusions/actions:</b>
+
+- “You received no service, so the bill is automatically invalid.”
+- “Leaving the ER always voids insurance coverage.”
+- “Code 99281 proves a physician treated you.”
+- Declare fraud or illegality, invent chart entries, guarantee a successful appeal, or classify both hospitals’ bills as duplicates solely because they share symptoms or a date.
+- Treat a partial payment as proof the charge is correct, or financial assistance as evidence of billing error.
+- Submit disputes, alter records, or make payment decisions without user approval.
+
+<b>Evaluation checks:</b>
+
+- Extract charge, code, payment, and outstanding statement balance from the synthetic documents accurately.
+- Keep each hospital’s encounter and obligations separate.
+- Detect the departure-status conflict without prematurely resolving it.
+- Change the explanation appropriately between the triage-only and documented-evaluation variants.
+- Identify missing evidence and distinguish arithmetic certainty from coding or coverage uncertainty.
+- Fail outputs that confidently endorse either the hospital or patient without sufficient evidence.
+
+<b>Why this case matters:</b> Reconciliation can be mathematically correct while the underlying service is disputed. CareUnfold needs to evaluate the evidence supporting the charge as well as explain who is being asked to pay.
+
+<pdf source="https://s3.documentcloud.org/documents/28677914/september-2026-botm.pdf" />
+</content>
+</page>

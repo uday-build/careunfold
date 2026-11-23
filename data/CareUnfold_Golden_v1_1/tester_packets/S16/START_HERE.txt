@@ -1,0 +1,7 @@
+CareUnfold fictional test case S16
+
+I left before treatment. Why did the ER bill me?
+
+Use release_A first. Later releases add new evidence; keep prior documents unless a newer version explicitly replaces one. Do not open release_X during the main sequence: it is an alternate timeline for facilitator use. Use the exact names/identifiers in these fictional files, not your own medical data.
+
+Tell us: What do you think you owe? What is uncertain? What would you do next? Which statement made you trust or doubt the answer?

@@ -1,0 +1,315 @@
+{
+  "id": "S05",
+  "situation": 5,
+  "title": "Copay split across services",
+  "user_prompt": "Why is part of my paid copay billed again?",
+  "fit": "Ready",
+  "audit_notes": "Clarify the proposed 30 receipt/18 balance by allocating 12 correctly and 18 to another account.",
+  "service_date": "2026-04-10",
+  "patient": "Casey Rivera",
+  "dob": "1991-08-14",
+  "member_id": "SYN-M005",
+  "account_id": "SYN-A005",
+  "claim_id": "SYN-C005",
+  "coverage": [
+    {
+      "plan": "Harbor Health Medical",
+      "member_id": "SYN-M005",
+      "effective_start": "2026-01-01",
+      "effective_end": "2026-12-31",
+      "relationship": "self",
+      "subscriber": "same as patient",
+      "medical_only": true
+    }
+  ],
+  "policy": "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+  "documents": [
+    {
+      "id": "S05-D01",
+      "kind": "coverage",
+      "title": "Enrollment confirmation and benefit excerpt",
+      "issued": "2026-01-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C005",
+      "account_id": "SYN-A005",
+      "encounter_id": "S05-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Patient date of birth": "1991-08-14",
+        "Member ID": "SYN-M005"
+      },
+      "body": [
+        "Plan: Harbor Health Medical. Member: SYN-M005. Effective 2026-01-01 through 2026-12-31. Relationship: self. Medical coverage only.",
+        "SYNTHETIC PLAN TERMS - apply only to this test family.",
+        "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+        "The patient is the account holder."
+      ],
+      "lines": [],
+      "relative_path": "S05/release_A/S05-D01.pdf"
+    },
+    {
+      "id": "S05-D02",
+      "kind": "visit",
+      "title": "Visit record",
+      "issued": "2026-04-10",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C005",
+      "account_id": "SYN-A005",
+      "encounter_id": "S05-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Encounter at Cedar Medical. Services are listed in the claim documents. This note does not establish insurer adjudication."
+      ],
+      "lines": [],
+      "relative_path": "S05/release_A/S05-D02.pdf"
+    },
+    {
+      "id": "S05-D03",
+      "kind": "eob",
+      "title": "Explanation of benefits",
+      "issued": "2026-04-24",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C005",
+      "account_id": "SYN-A005",
+      "encounter_id": "S05-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "THIS IS NOT A BILL. Patient payments made to the provider are not deducted from EOB responsibility.",
+        "Amounts not assigned to the patient remain subject to provider/plan reconciliation; this document is not evidence that the provider posted payment."
+      ],
+      "lines": [
+        {
+          "code": "VISIT",
+          "description": "Office visit",
+          "provider": "Cedar Medical",
+          "billed_cents": 18000,
+          "allowed_cents": 10000,
+          "plan_paid_cents": 8800,
+          "patient_responsibility_cents": 1200,
+          "deductible_cents": 0,
+          "copay_cents": 1200,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 0,
+          "reason": "Processed under service-date plan",
+          "line_id": "SYN-C005-L1"
+        },
+        {
+          "code": "LAB",
+          "description": "In-office lab",
+          "provider": "Cedar Medical",
+          "billed_cents": 9000,
+          "allowed_cents": 6000,
+          "plan_paid_cents": 4200,
+          "patient_responsibility_cents": 1800,
+          "deductible_cents": 0,
+          "copay_cents": 1800,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 0,
+          "reason": "Processed under service-date plan",
+          "line_id": "SYN-C005-L2"
+        }
+      ],
+      "relative_path": "S05/release_A/S05-D03.pdf"
+    },
+    {
+      "id": "S05-D04",
+      "kind": "receipt",
+      "title": "Payment receipt",
+      "issued": "2026-04-10",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C005",
+      "account_id": "SYN-A005",
+      "encounter_id": "S05-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Receipt ID": "S05-P1",
+        "Amount received": 3000,
+        "Intended account": "SYN-A005",
+        "Method": "Synthetic card ending 0000"
+      },
+      "body": [
+        "This receipt confirms payment received for the stated account; it is not proof of allocation in the current statement."
+      ],
+      "lines": [],
+      "relative_path": "S05/release_A/S05-D04.pdf"
+    },
+    {
+      "id": "S05-D05",
+      "kind": "bill",
+      "title": "Patient account statement",
+      "issued": "2026-05-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C005",
+      "account_id": "SYN-A005",
+      "encounter_id": "S05-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 27000,
+        "Posted adjustments": 11000,
+        "Posted insurer payments": 13000,
+        "Posted patient payments": 1200,
+        "Statement balance": 1800,
+        "Statement date": "2026-05-01",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S05/release_A/S05-D05.pdf"
+    },
+    {
+      "id": "S05-D06",
+      "kind": "ledger",
+      "title": "Account transaction ledger",
+      "issued": "2026-05-08",
+      "release": "B",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C005",
+      "account_id": "SYN-A005",
+      "encounter_id": "S05-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Transaction S05-P1: received $30.00 on 2026-04-10; intended account SYN-A005; posted account split allocation; posted date 2026-04-10. Allocations: SYN-A005 $12.00; SYN-OTHER $18.00"
+      ],
+      "lines": [],
+      "relative_path": "S05/release_B/S05-D06.pdf"
+    },
+    {
+      "id": "S05-D07",
+      "kind": "note",
+      "title": "Call log",
+      "issued": "2026-05-09",
+      "release": "B",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C005",
+      "account_id": "SYN-A005",
+      "encounter_id": "S05-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Practice manager promised a callback; no callback or adjustment recorded."
+      ],
+      "lines": [],
+      "relative_path": "S05/release_B/S05-D07.pdf"
+    }
+  ],
+  "stages": [
+    {
+      "id": "S05-A",
+      "release": "A",
+      "input_document_ids": [
+        "S05-D01",
+        "S05-D02",
+        "S05-D03",
+        "S05-D04",
+        "S05-D05"
+      ],
+      "status": "payment_allocation_unresolved",
+      "expected": {
+        "eob_responsibility_cents": 3000,
+        "verified_patient_payments_cents": 3000,
+        "supported_remaining_cents": 0,
+        "provider_statement_balance_cents": 1800
+      },
+      "required_findings": [
+        "Receipt covers the 30 EOB responsibility, but statement credits only 12.",
+        "Need allocation ledger before asserting where the missing 18 went."
+      ],
+      "missing_evidence": [
+        "Allocation ledger"
+      ],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S05-D01",
+        "S05-D02",
+        "S05-D03",
+        "S05-D04",
+        "S05-D05"
+      ]
+    },
+    {
+      "id": "S05-B",
+      "release": "B",
+      "input_document_ids": [
+        "S05-D01",
+        "S05-D02",
+        "S05-D03",
+        "S05-D04",
+        "S05-D05",
+        "S05-D06",
+        "S05-D07"
+      ],
+      "status": "misallocated_payment",
+      "expected": {
+        "eob_responsibility_cents": 3000,
+        "verified_patient_payments_cents": 3000,
+        "supported_remaining_cents": 0,
+        "provider_statement_balance_cents": 1800
+      },
+      "required_findings": [
+        "Ledger allocates 18 to SYN-OTHER. Request authorized correction.",
+        "Promised callback is not closure."
+      ],
+      "missing_evidence": [],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S05-D01",
+        "S05-D02",
+        "S05-D03",
+        "S05-D04",
+        "S05-D05",
+        "S05-D06",
+        "S05-D07"
+      ]
+    }
+  ],
+  "authoritative_ledger": [
+    {
+      "transaction_id": "S05-P1",
+      "type": "patient_payment",
+      "amount_cents": 3000,
+      "received_date": "2026-04-10",
+      "intended_account": "SYN-A005",
+      "posted_account": "split allocation",
+      "posted_date": "2026-04-10",
+      "reversed": false,
+      "allocations": [
+        {
+          "account": "SYN-A005",
+          "amount_cents": 1200
+        },
+        {
+          "account": "SYN-OTHER",
+          "amount_cents": 1800
+        }
+      ]
+    }
+  ],
+  "source_basis": "Notion narrative; documents authored synthetically",
+  "external_validation": "Synthetic arithmetic and evidence behavior only; not certified medical coding or legal rules",
+  "source_urls": [
+    "https://www.reddit.com/r/MedicalBill/comments/1rmr419/what_do_you_do_if_doctors_billing_company_keeps/"
+  ],
+  "reference_assets": [],
+  "gold_status": "authored_v1_not_domain_certified"
+}

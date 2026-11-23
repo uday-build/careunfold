@@ -1,0 +1,282 @@
+{
+  "id": "S12",
+  "situation": 12,
+  "title": "Lab waiver and promised correction",
+  "user_prompt": "Does the waiver mean I owe the lab despite a zero EOB?",
+  "fit": "Ready for uncertainty and closure",
+  "audit_notes": "Do not decide waiver enforceability; subsequent zero statement closes provider balance.",
+  "service_date": "2026-04-10",
+  "patient": "Cameron Rivera",
+  "dob": "1991-08-14",
+  "member_id": "SYN-M012",
+  "account_id": "SYN-A012",
+  "claim_id": "SYN-C012",
+  "coverage": [
+    {
+      "plan": "Harbor Health Medical",
+      "member_id": "SYN-M012",
+      "effective_start": "2026-01-01",
+      "effective_end": "2026-12-31",
+      "relationship": "self",
+      "subscriber": "same as patient",
+      "medical_only": true
+    }
+  ],
+  "policy": "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+  "documents": [
+    {
+      "id": "S12-D01",
+      "kind": "coverage",
+      "title": "Enrollment confirmation and benefit excerpt",
+      "issued": "2026-01-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C012",
+      "account_id": "SYN-A012",
+      "encounter_id": "S12-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Patient date of birth": "1991-08-14",
+        "Member ID": "SYN-M012"
+      },
+      "body": [
+        "Plan: Harbor Health Medical. Member: SYN-M012. Effective 2026-01-01 through 2026-12-31. Relationship: self. Medical coverage only.",
+        "SYNTHETIC PLAN TERMS - apply only to this test family.",
+        "For these synthetic services, the final EOB gives line-level cost sharing. A bill is not an EOB. Coverage applies on service date; member payments are separate from insurer adjudication.",
+        "The patient is the account holder."
+      ],
+      "lines": [],
+      "relative_path": "S12/release_A/S12-D01.pdf"
+    },
+    {
+      "id": "S12-D02",
+      "kind": "visit",
+      "title": "Visit record",
+      "issued": "2026-04-10",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C012",
+      "account_id": "SYN-A012",
+      "encounter_id": "S12-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Encounter at Cedar Medical. Services are listed in the claim documents. This note does not establish insurer adjudication."
+      ],
+      "lines": [],
+      "relative_path": "S12/release_A/S12-D02.pdf"
+    },
+    {
+      "id": "S12-D03",
+      "kind": "eob",
+      "title": "Explanation of benefits",
+      "issued": "2026-04-24",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C012",
+      "account_id": "SYN-A012",
+      "encounter_id": "S12-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "THIS IS NOT A BILL. Patient payments made to the provider are not deducted from EOB responsibility.",
+        "Amounts not assigned to the patient remain subject to provider/plan reconciliation; this document is not evidence that the provider posted payment."
+      ],
+      "lines": [
+        {
+          "code": "LAB",
+          "description": "Diagnostic laboratory service",
+          "provider": "Cedar Medical",
+          "billed_cents": 42000,
+          "allowed_cents": 0,
+          "plan_paid_cents": 0,
+          "patient_responsibility_cents": 0,
+          "deductible_cents": 0,
+          "copay_cents": 0,
+          "coinsurance_cents": 0,
+          "noncovered_cents": 0,
+          "reason": "Denied; provider responsibility under this adjudication",
+          "line_id": "SYN-C012-L1"
+        }
+      ],
+      "relative_path": "S12/release_A/S12-D03.pdf"
+    },
+    {
+      "id": "S12-D04",
+      "kind": "bill",
+      "title": "Patient account statement",
+      "issued": "2026-05-01",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C012",
+      "account_id": "SYN-A012",
+      "encounter_id": "S12-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 42000,
+        "Posted adjustments": 0,
+        "Posted insurer payments": 0,
+        "Posted patient payments": 0,
+        "Statement balance": 42000,
+        "Statement date": "2026-05-01",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S12/release_A/S12-D04.pdf"
+    },
+    {
+      "id": "S12-D05",
+      "kind": "agreement",
+      "title": "Laboratory financial agreement",
+      "issued": "2026-04-10",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C012",
+      "account_id": "SYN-A012",
+      "encounter_id": "S12-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Patient agrees to pay charges not covered by insurance where applicable. No claim-specific determination or applicable exception is attached."
+      ],
+      "lines": [],
+      "relative_path": "S12/release_A/S12-D05.pdf"
+    },
+    {
+      "id": "S12-D06",
+      "kind": "note",
+      "title": "Insurer call note",
+      "issued": "2026-05-03",
+      "release": "A",
+      "version": 1,
+      "supersedes": null,
+      "claim_id": "SYN-C012",
+      "account_id": "SYN-A012",
+      "encounter_id": "S12-V1",
+      "service_date": "2026-04-10",
+      "fields": {},
+      "body": [
+        "Representative will contact the laboratory. No correction or revised statement confirmed."
+      ],
+      "lines": [],
+      "relative_path": "S12/release_A/S12-D06.pdf"
+    },
+    {
+      "id": "S12-D07",
+      "kind": "bill",
+      "title": "Patient account statement",
+      "issued": "2026-05-15",
+      "release": "B",
+      "version": 2,
+      "supersedes": "S12-D04",
+      "claim_id": "SYN-C012",
+      "account_id": "SYN-A012",
+      "encounter_id": "S12-V1",
+      "service_date": "2026-04-10",
+      "fields": {
+        "Total charges": 42000,
+        "Posted adjustments": 42000,
+        "Posted insurer payments": 0,
+        "Posted patient payments": 0,
+        "Statement balance": 0,
+        "Statement date": "2026-05-15",
+        "Payment due": "30 days after statement date"
+      },
+      "body": [],
+      "lines": [],
+      "relative_path": "S12/release_B/S12-D07.pdf"
+    }
+  ],
+  "stages": [
+    {
+      "id": "S12-A",
+      "release": "A",
+      "input_document_ids": [
+        "S12-D01",
+        "S12-D02",
+        "S12-D03",
+        "S12-D04",
+        "S12-D05",
+        "S12-D06"
+      ],
+      "status": "waiver_applicability_unresolved",
+      "expected": {
+        "eob_responsibility_cents": 0,
+        "verified_patient_payments_cents": 0,
+        "supported_remaining_cents": 0,
+        "provider_statement_balance_cents": 42000
+      },
+      "required_findings": [
+        "EOB assigns zero; broad waiver applicability unresolved.",
+        "Contact promise does not close balance."
+      ],
+      "missing_evidence": [
+        "Claim-specific waiver applicability or reviewed policy",
+        "Corrected statement"
+      ],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S12-D01",
+        "S12-D02",
+        "S12-D03",
+        "S12-D04",
+        "S12-D05",
+        "S12-D06"
+      ]
+    },
+    {
+      "id": "S12-B",
+      "release": "B",
+      "input_document_ids": [
+        "S12-D01",
+        "S12-D02",
+        "S12-D03",
+        "S12-D04",
+        "S12-D05",
+        "S12-D06",
+        "S12-D07"
+      ],
+      "status": "provider_account_closed",
+      "expected": {
+        "eob_responsibility_cents": 0,
+        "verified_patient_payments_cents": 0,
+        "supported_remaining_cents": 0,
+        "provider_statement_balance_cents": 0
+      },
+      "required_findings": [
+        "Written statement confirms adjustment and zero balance."
+      ],
+      "missing_evidence": [],
+      "forbidden_claims": [
+        "Fraud or legal liability conclusively established without evidence",
+        "Send, pay, appeal, or contact an organization without user approval"
+      ],
+      "evidence_ids": [
+        "S12-D01",
+        "S12-D02",
+        "S12-D03",
+        "S12-D04",
+        "S12-D05",
+        "S12-D06",
+        "S12-D07"
+      ]
+    }
+  ],
+  "authoritative_ledger": [],
+  "source_basis": "Notion narrative; documents authored synthetically",
+  "external_validation": "Synthetic arithmetic and evidence behavior only; not certified medical coding or legal rules",
+  "source_urls": [
+    "https://www.reddit.com/r/MedicalBill/comments/1xj8wo8/quest_ignoring_eob/"
+  ],
+  "reference_assets": [],
+  "gold_status": "authored_v1_not_domain_certified"
+}
