@@ -28,6 +28,8 @@ export const extractedClaimSchema = z.object({
       billedAmountUsd: money,
       planPaidUsd: money,
       memberResponsibilityUsd: money,
+      amountPaidUsd: money.optional(),
+      statementBalanceUsd: money.optional(),
     })
     .nullable(),
 });
@@ -42,9 +44,9 @@ export type ClaimExtractRequest = {
 };
 
 export async function extractClaimEvidence(input: ClaimExtractRequest): Promise<ExtractedClaimFields> {
-  const { text } = await openRouterChat({
+    const { text } = await openRouterChat({
     model: openRouterModels().extract,
-      provider: { ...openRouterPrivacy, only: ["google-vertex", "google-ai-studio"] },
+    provider: { ...openRouterPrivacy, only: ["google-vertex", "google-ai-studio"] },
     plugins: input.mimeType === "application/pdf" ? [{ id: "file-parser", pdf: { engine: "native" } }] : undefined,
     response_format: {
       type: "json_schema",
@@ -58,7 +60,7 @@ export async function extractClaimEvidence(input: ClaimExtractRequest): Promise<
       {
         role: "system",
         content:
-          "Extract billing evidence from a medical bill, adjusted bill, explanation of benefits, receipt, or similar claim document. Return patient name, provider, dates, claim or account references, service lines, and amounts. Use null or empty arrays when a field is not clearly present. Do not invent amounts, dates, names, or claim numbers. Dates must be YYYY-MM-DD. Money must be decimal strings such as 40.00. If the document is a corrected or adjusted bill, set documentKind to adjusted_bill.",
+          "Extract billing evidence from a medical bill, adjusted bill, explanation of benefits, receipt, or similar claim document. Return patient name, provider, dates, claim or account references, service lines, and amounts. Use null or empty arrays when a field is not clearly present. Do not invent amounts, dates, names, or claim numbers. Dates must be YYYY-MM-DD. Money must be USD dollars as decimal strings such as 75.00, never integer cents. For a receipt, put the amount received in amountPaidUsd. For a bill or statement, put the amount the provider currently asks the patient to pay in statementBalanceUsd. For an EOB, put the patient responsibility total in memberResponsibilityUsd. If the document is a corrected or adjusted bill, set documentKind to adjusted_bill.",
       },
       {
         role: "user",
@@ -118,11 +120,13 @@ const claimJsonSchema = {
     totals: {
       type: ["object", "null"],
       additionalProperties: false,
-      required: ["billedAmountUsd", "planPaidUsd", "memberResponsibilityUsd"],
+      required: ["billedAmountUsd", "planPaidUsd", "memberResponsibilityUsd", "amountPaidUsd", "statementBalanceUsd"],
       properties: {
         billedAmountUsd: { type: ["string", "null"] },
         planPaidUsd: { type: ["string", "null"] },
         memberResponsibilityUsd: { type: ["string", "null"] },
+        amountPaidUsd: { type: ["string", "null"] },
+        statementBalanceUsd: { type: ["string", "null"] },
       },
     },
   },

@@ -37,6 +37,7 @@ export async function runGoldenCase(item: GoldenCase, runner: GoldenRunner = {},
       return {
         filename: document.filename,
         kind: document.productKind,
+        sourceKind: document.kind,
         extracted: await extract({
           filename: document.filename,
           mimeType: "application/pdf",
@@ -48,6 +49,7 @@ export async function runGoldenCase(item: GoldenCase, runner: GoldenRunner = {},
       return {
         filename: document.filename,
         kind: document.productKind,
+        sourceKind: document.kind,
         extracted: null,
         error: error instanceof Error ? error.message : "The document could not be read.",
       };
@@ -56,8 +58,16 @@ export async function runGoldenCase(item: GoldenCase, runner: GoldenRunner = {},
   const evidence = [];
   const unread = [];
   for (const row of extracted) {
-    if (row.extracted) evidence.push({ filename: row.filename, kind: row.kind, extracted: row.extracted });
-    else unread.push("error" in row && row.error ? `${row.filename}: ${row.error}` : row.filename);
+    if (row.extracted) {
+      evidence.push({
+        filename: row.filename,
+        kind: row.kind,
+        sourceKind: row.sourceKind,
+        extracted: row.extracted,
+      });
+    } else {
+      unread.push("error" in row && row.error ? `${row.filename}: ${row.error}` : row.filename);
+    }
   }
   const investigateInput = investigationInput(item, classification, evidence, documents);
   const leaks = modelPayloadLeak(JSON.stringify({ classifyInput, investigateInput: serializeInvestigateInput(investigateInput) }), item);
@@ -74,7 +84,7 @@ export async function runGoldenCase(item: GoldenCase, runner: GoldenRunner = {},
 export function investigationInput(
   item: GoldenCase,
   classification: IssueClassification,
-  evidence: Array<{ filename: string; kind: string; extracted: ExtractedClaimFields }>,
+  evidence: Array<{ filename: string; kind: string; sourceKind?: string; extracted: ExtractedClaimFields }>,
   documents: GoldenDocument[] = [],
 ): InvestigateBillingRequest {
   return {

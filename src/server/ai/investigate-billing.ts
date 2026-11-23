@@ -4,6 +4,7 @@ import type { ExtractedClaimFields } from "./extract-claim";
 import type { IssueClassification } from "./classify-issue";
 import { ISSUE_LABELS } from "./classify-issue";
 import { openRouterChat, openRouterModels, openRouterPrivacy, parseJsonObject } from "./openrouter";
+import { mergeInvestigationTotals, reconcileClaimTotals } from "./reconcile-totals";
 
 const nullableCents = z.number().nullable();
 
@@ -43,11 +44,12 @@ export type InvestigateBillingRequest = {
   request: string;
   classification: IssueClassification;
   visit: { patientName: string; visitDate: string; provider: string | null };
-  evidence: Array<{ filename: string; kind: string; extracted: ExtractedClaimFields }>;
+  evidence: Array<{ filename: string; kind: string; sourceKind?: string; extracted: ExtractedClaimFields }>;
   planPassages: string[];
 };
 
 export async function investigateBilling(input: InvestigateBillingRequest): Promise<BillingInvestigation> {
+  const computedTotals = reconcileClaimTotals(input.evidence);
   const { text } = await openRouterChat({
     model: openRouterModels().investigate,
     provider: { ...openRouterPrivacy, only: ["anthropic"] },
@@ -70,7 +72,10 @@ export async function investigateBilling(input: InvestigateBillingRequest): Prom
           "Do not say a bill is paid unless the evidence shows a payment that covers it.",
           "A promised correction is not evidence of correction.",
           "finding must be matches_available_records, possible_discrepancy, or insufficient_information.",
-          "totalsCents values are integer USD cents. null means unknown or not applicable, never a guess. null is not zero.",
+          "Extracted money fields are USD dollars. totalsCents values are integer USD cents: multiply dollars by 100.",
+          "Copy precomputedTotalsCents for the four core totals unless a document clearly contradicts them.",
+          "Do not leave eobResponsibilityCents, verifiedPatientPaymentsCents, supportedRemainingCents, or providerStatementBalanceCents null when precomputedTotalsCents has a number.",
+          "null means unknown or not applicable, never a guess. null is not zero.",
           "eobResponsibilityCents is patient responsibility on the current applicable EOB.",
           "verifiedPatientPaymentsCents is gross receipts supported by evidence.",
           "supportedRemainingCents is the evidence-supported net amount remaining, not a legal ruling.",
@@ -88,6 +93,7 @@ export async function investigateBilling(input: InvestigateBillingRequest): Prom
           classificationConfidence: input.classification.confidence,
           visit: input.visit,
           extractedEvidence: input.evidence,
+          precomputedTotalsCents: computedTotals,
           planPassages: input.planPassages,
         }),
       },
@@ -97,7 +103,10 @@ export async function investigateBilling(input: InvestigateBillingRequest): Prom
   if (!parsed.success) {
     throw new HttpError(502, "investigate_failed", "The records could not be compared. Nothing was saved.");
   }
-  return parsed.data;
+  return {
+    ...parsed.data,
+    totalsCents: mergeInvestigationTotals(computedTotals, parsed.data.totalsCents),
+  };
 }
 
 function normalizeInvestigation(raw: Record<string, unknown>) {
