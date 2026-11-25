@@ -480,6 +480,20 @@ export const visitDocument = pgTable(
   (table) => [uniqueIndex("visit_document_idx").on(table.visitId, table.documentId)],
 );
 
+export const coverageDocument = pgTable(
+  "coverage_document",
+  {
+    coverageId: uuid("coverage_id")
+      .notNull()
+      .references(() => coverage.id, { onDelete: "cascade" }),
+    documentId: uuid("document_id")
+      .notNull()
+      .references(() => uploadedDocument.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [uniqueIndex("coverage_document_idx").on(table.coverageId, table.documentId)],
+);
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
@@ -519,6 +533,7 @@ export const schema = {
   householdClinician,
   uploadedDocument,
   visitDocument,
+  coverageDocument,
   userRelations,
   sessionRelations,
   accountRelations,

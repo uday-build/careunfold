@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { AppContext } from "@/server/domain/service";
+import { dispatch } from "@/server/http/router";
 import { adultPatient, api, createTestContext, origin, register, resetData, saveProfile, selfPatient } from "./support";
 
 let ctx: AppContext;
@@ -13,6 +14,9 @@ beforeAll(async () => {
     BETTER_AUTH_URL: origin,
     EMAIL_DELIVERY: "memory",
   });
+  delete process.env.OPENROUTER_API_KEY;
+  delete process.env.AI_GATEWAY_API_KEY;
+  delete process.env.VERCEL_OIDC_TOKEN;
   const harness = await createTestContext();
   ctx = harness.ctx;
   closeDatabase = harness.close;
@@ -20,6 +24,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetData(ctx);
+  ctx.extractCoverage = undefined;
 });
 
 afterAll(async () => {
@@ -229,5 +234,143 @@ describe("family onboarding", () => {
     });
     expect(review.status).toBe(200);
     expect(review.data.onboarding.currentStep).toBe("complete");
+  });
+
+  it("drafts coverage fields from a document without saving coverage", async () => {
+    const created = await register(ctx, "coverage-extract@example.com");
+    await saveProfile(ctx, created.cookie, "Avery Quinn", "self");
+    await api(ctx, "/api/onboarding/family", {
+      method: "POST",
+      cookie: created.cookie,
+      idempotencyKey: "family-coverage-extract",
+      body: { patients: [selfPatient("self-coverage-extract")] },
+    });
+    ctx.extractCoverage = async (input) => {
+      expect(input.patients.map((person) => `${person.givenName} ${person.familyName}`)).toContain("Avery Quinn");
+      return {
+        insurer: "Northwind Health",
+        planName: "Gold PPO",
+        subscriberName: "Avery Quinn",
+        memberId: "MEM-4411",
+        groupNumber: "GRP-77",
+        startDate: "2026-01-01",
+        endDate: null,
+        coveredPatientNames: ["Avery Quinn"],
+        deductibleUsd: "500.00",
+        innFamilyDeductibleUsd: "1000",
+        officeVisitCopayUsd: "25",
+        specialistCopayUsd: "50",
+        urgentCareCopayUsd: null,
+        emergencyCopayUsd: "250",
+        outOfPocketMaxUsd: "4000",
+        innFamilyOutOfPocketMaxUsd: "8000",
+        coinsurancePercent: 10,
+        memberServicesName: "Northwind Member Services",
+        memberServicesPhone: "800-555-0100",
+        memberServicesUrl: "https://northwind.example/members",
+        rxBin: "004336",
+        rxPcn: "ADV",
+        rxGrp: "RX77",
+        pharmacyWebsiteUrl: null,
+        pharmacyMemberServicesPhone: null,
+        pharmacyPhone: null,
+        claimsAddress: "PO Box 100, Portland OR 97201",
+        claimsPhone: null,
+        claimsUrl: null,
+        providerSupportPhone: null,
+      };
+    };
+    const form = new FormData();
+    form.set("file", new File([new Uint8Array([37, 80, 68, 70, 45, 49])], "northwind-card.pdf", { type: "application/pdf" }));
+    const extracted = await dispatch(
+      new Request(`${origin}/api/coverage/extract`, {
+        method: "POST",
+        headers: { origin, cookie: created.cookie },
+        body: form,
+      }),
+      ctx,
+    );
+    expect(extracted.status).toBe(200);
+    const body = await extracted.json();
+    expect(body.persisted).toBe(false);
+    expect(body.draft.insurer).toBe("Northwind Health");
+    expect(body.draft.groupNumber).toBe("GRP-77");
+    expect(body.draft.memberId).toBe("MEM-4411");
+    expect(body.draft.startState).toBe("known");
+    expect(body.draft.startValue).toBe("2026-01-01");
+    expect(body.draft.benefits.officeVisitCopay).toEqual({ state: "known", amountUsd: "25" });
+    expect(body.draft.benefits.coinsurance).toEqual({ state: "known", percent: 10 });
+    const household = await api(ctx, "/api/onboarding", { cookie: created.cookie });
+    expect(household.data.onboarding.coverage).toEqual([]);
+  });
+
+  it("does not invent coverage when extraction is not configured", async () => {
+    const created = await register(ctx, "coverage-noai@example.com");
+    await saveProfile(ctx, created.cookie, "Avery Quinn", "self");
+    await api(ctx, "/api/onboarding/family", {
+      method: "POST",
+      cookie: created.cookie,
+      idempotencyKey: "family-coverage-noai",
+      body: { patients: [selfPatient("self-coverage-noai")] },
+    });
+    const form = new FormData();
+    form.set("file", new File([new Uint8Array([37, 80, 68, 70])], "card.pdf", { type: "application/pdf" }));
+    const extracted = await dispatch(
+      new Request(`${origin}/api/coverage/extract`, {
+        method: "POST",
+        headers: { origin, cookie: created.cookie },
+        body: form,
+      }),
+      ctx,
+    );
+    expect(extracted.status).toBe(503);
+    expect((await extracted.json()).error.code).toBe("extract_unconfigured");
+  });
+
+  it("stores the coverage card after the drafted record is saved", async () => {
+    const created = await register(ctx, "coverage-cardfile@example.com");
+    await saveProfile(ctx, created.cookie, "Avery Quinn", "self");
+    const family = await api(ctx, "/api/onboarding/family", {
+      method: "POST",
+      cookie: created.cookie,
+      idempotencyKey: "family-coverage-cardfile",
+      body: { patients: [selfPatient("self-coverage-cardfile")] },
+    });
+    const saved = await api(ctx, "/api/onboarding/coverage", {
+      method: "POST",
+      cookie: created.cookie,
+      idempotencyKey: "coverage-cardfile",
+      body: {
+        records: [
+          {
+            clientKey: "coverage-cardfile-key",
+            subscriberName: "Avery Quinn",
+            subscriberPatientId: family.data.onboarding.patients[0].id,
+            memberId: "MEM-4411",
+            groupNumber: "GRP-77",
+            start: { state: "unknown" },
+            end: { state: "unknown" },
+            coveredPatientIds: [family.data.onboarding.patients[0].id],
+          },
+        ],
+      },
+    });
+    expect(saved.status).toBe(200);
+    const coverageId = saved.data.onboarding.coverage[0].id as string;
+    const form = new FormData();
+    form.set("file", new File([new Uint8Array([37, 80, 68, 70, 45, 57])], "northwind-card.pdf", { type: "application/pdf" }));
+    const uploaded = await dispatch(
+      new Request(`${origin}/api/coverage/${coverageId}/documents`, {
+        method: "POST",
+        headers: { origin, cookie: created.cookie },
+        body: form,
+      }),
+      ctx,
+    );
+    expect(uploaded.status).toBe(201);
+    const opened = await api(ctx, "/api/household", { cookie: created.cookie });
+    expect(opened.data.households[0].coverage[0].documents).toEqual([
+      expect.objectContaining({ filename: "northwind-card.pdf", kind: "id_card" }),
+    ]);
   });
 });

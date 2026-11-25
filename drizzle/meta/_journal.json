@@ -64,6 +64,13 @@
       "when": 1764028800000,
       "tag": "0008_document_optional_details",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1764086400000,
+      "tag": "0009_coverage_documents",
+      "breakpoints": true
     }
   ]
 }

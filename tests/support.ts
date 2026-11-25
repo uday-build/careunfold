@@ -42,6 +42,7 @@ export async function resetData(ctx: AppContext) {
   clearMemoryMailbox();
   await ctx.db.execute(sql`
     TRUNCATE TABLE
+      coverage_document,
       visit_document,
       uploaded_document,
       visit,

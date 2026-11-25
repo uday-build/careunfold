@@ -10,6 +10,11 @@ const items = [
     detail: "Setup and relationship graph",
   },
   {
+    href: "/app/coverage",
+    label: "Coverage",
+    detail: "ID cards and plan benefits",
+  },
+  {
     href: "/app/visits",
     label: "Visits",
     detail: "Previous visits and new ones",

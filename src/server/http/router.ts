@@ -9,6 +9,8 @@ import {
   completeReview,
   createPrivacyRequest,
   createVisit,
+  attachCoverageDocument,
+  extractCoverageDraft,
   extractVisitDraft,
   decideAccess,
   downloadDocument,
@@ -167,6 +169,37 @@ async function route(request: Request, ctx: AppContext, path: string, actor: Act
     return json(200, await createPrivacyRequest(ctx, requireActor(actor), await readJson(request)));
   }
 
+  if (request.method === "POST" && path === "/api/coverage/extract") {
+    const form = await request.formData();
+    const uploaded = form.get("file");
+    if (!(uploaded instanceof File)) {
+      throw new HttpError(422, "empty_file", "Choose a file to upload.");
+    }
+    return json(
+      200,
+      await extractCoverageDraft(ctx, requireActor(actor), {
+        filename: uploaded.name,
+        mimeType: uploaded.type || "application/octet-stream",
+        bytes: new Uint8Array(await uploaded.arrayBuffer()),
+      }),
+    );
+  }
+  const coverageDocuments = path.match(/^\/api\/coverage\/([^/]+)\/documents$/);
+  if (coverageDocuments && request.method === "POST") {
+    const form = await request.formData();
+    const uploaded = formFiles(form, "file")[0];
+    if (!uploaded) {
+      throw new HttpError(422, "empty_file", "Choose a file to upload.");
+    }
+    return json(
+      201,
+      await attachCoverageDocument(ctx, requireActor(actor), coverageDocuments[1], {
+        filename: uploaded.name,
+        mimeType: uploaded.type || "application/octet-stream",
+        bytes: new Uint8Array(await uploaded.arrayBuffer()),
+      }),
+    );
+  }
   if (request.method === "POST" && path === "/api/visits/extract") {
     const form = await request.formData();
     const uploaded = form.get("file");

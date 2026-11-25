@@ -72,7 +72,7 @@ export type CoverageDraft = {
   providerSupportPhone: string;
 };
 
-type Onboarding = {
+export type Onboarding = {
   displayName: string | null;
   organizingFor: Organizing | null;
   currentStep?: "profile" | "family" | "coverage" | "review" | "complete";
@@ -292,13 +292,33 @@ export function FamilyForm({
   );
 }
 
-export function CoverageForm({ onboarding, continueTo = "/onboarding/review" }: { onboarding: Onboarding; continueTo?: string }) {
+export function CoverageForm({
+  onboarding,
+  continueTo = "/onboarding/review",
+  allowSkip = true,
+  extracted = false,
+  warnings = [],
+  initialRecords,
+  pendingFiles = [],
+  storageConfigured = false,
+}: {
+  onboarding: Onboarding;
+  continueTo?: string;
+  allowSkip?: boolean;
+  extracted?: boolean;
+  warnings?: string[];
+  initialRecords?: CoverageDraft[];
+  pendingFiles?: File[];
+  storageConfigured?: boolean;
+}) {
   const router = useRouter();
   const key = useRef(crypto.randomUUID());
   const [records, setRecords] = useState<CoverageDraft[]>(
-    onboarding.coverage.length > 0
-      ? onboarding.coverage.map(toCoverageDraft)
-      : [emptyCoverage()],
+    initialRecords && initialRecords.length > 0
+      ? initialRecords
+      : onboarding.coverage.length > 0
+        ? onboarding.coverage.map(toCoverageDraft)
+        : [emptyCoverage()],
   );
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -306,7 +326,7 @@ export function CoverageForm({ onboarding, continueTo = "/onboarding/review" }: 
   async function save(skip: boolean) {
     setPending(true);
     setError("");
-    const result = await api("/api/onboarding/coverage", {
+    const result = await api<{ onboarding?: { coverage?: Array<{ id: string; clientKey: string }> } }>("/api/onboarding/coverage", {
       method: "POST",
       idempotencyKey: key.current,
       body: skip
@@ -346,13 +366,42 @@ export function CoverageForm({ onboarding, continueTo = "/onboarding/review" }: 
       return;
     }
     key.current = crypto.randomUUID();
+    if (!skip && pendingFiles.length > 0 && storageConfigured) {
+      const saved = result.data.onboarding?.coverage ?? [];
+      const match = saved.find((item) => records.some((record) => record.clientKey === item.clientKey));
+      if (match?.id) {
+        const form = new FormData();
+        for (const file of pendingFiles) form.append("file", file);
+        try {
+          await fetch(`/api/coverage/${match.id}/documents`, {
+            method: "POST",
+            body: form,
+            credentials: "same-origin",
+          });
+        } catch {
+          // Coverage details are already saved. The card image can be added later.
+        }
+      }
+    }
     router.push(continueTo);
     router.refresh();
   }
 
   return (
     <div className="stack">
-      <p className="muted">Coverage is optional. If you add an ID card, Group ID, member name, and member ID are required. Member IDs are masked in lists. Nothing is read from a photo in this version.</p>
+      {extracted ? (
+        <Notice tone="info" title="Drafted from the document">
+          These fields are not saved yet. Change anything that is wrong, then confirm.
+          {pendingFiles.length > 0
+            ? ` ${pendingFiles.length === 1 ? "This file" : "These files"} will be stored with the coverage record: ${pendingFiles.map((file) => file.name).join(", ")}.`
+            : ""}
+        </Notice>
+      ) : (
+        <p className="muted">Coverage is optional. If you add an ID card, Group ID, member name, and member ID are required. Member IDs are masked in lists.</p>
+      )}
+      {warnings.map((warning) => (
+        <Notice key={warning} tone="pending" title="Check this field">{warning}</Notice>
+      ))}
       {records.map((record, index) => (
         <section className="card stack" key={record.clientKey}>
           <h2>Insurance ID card</h2>
@@ -504,8 +553,12 @@ export function CoverageForm({ onboarding, continueTo = "/onboarding/review" }: 
       <button className="secondary" type="button" onClick={() => setRecords((current) => [...current, emptyCoverage()])}>Add an ID card</button>
       {error ? <p className="form-error" role="alert">Error: {error}</p> : null}
       <div className="actions">
-        <button className="primary" type="button" disabled={pending} onClick={() => save(false)}>Save and continue</button>
-        <button className="secondary" type="button" disabled={pending} onClick={() => save(true)}>Skip coverage</button>
+        <button className="primary" type="button" disabled={pending} onClick={() => save(false)}>
+          {pending ? "Saving" : extracted ? "Confirm and save coverage" : "Save and continue"}
+        </button>
+        {allowSkip ? (
+          <button className="secondary" type="button" disabled={pending} onClick={() => save(true)}>Skip coverage</button>
+        ) : null}
       </div>
     </div>
   );

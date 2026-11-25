@@ -9,6 +9,7 @@ import {
   auditEvent,
   authorityReview,
   coverage,
+  coverageDocument,
   coveragePatient,
   coverageVersion,
   household,
@@ -35,6 +36,7 @@ import {
 } from "../storage/files";
 import { classifyBillingIssue, type ClassifyIssueRequest, type IssueClassification } from "../ai/classify-issue";
 import { extractClaimEvidence, type ClaimExtractRequest, type ExtractedClaimFields } from "../ai/extract-claim";
+import { extractCoverageFields, type CoverageExtractRequest, type ExtractedCoverageFields } from "../ai/extract-coverage";
 import { extractVisitFields, type ExtractedVisitFields, type VisitExtractRequest } from "../ai/extract-visit";
 import { investigateBilling, type BillingInvestigation, type InvestigateBillingRequest } from "../ai/investigate-billing";
 import type { AppEnv } from "../env";
@@ -83,6 +85,7 @@ export type AppContext = {
   storage: FileStore;
   now: () => Date;
   extractVisit?: (input: VisitExtractRequest) => Promise<ExtractedVisitFields>;
+  extractCoverage?: (input: CoverageExtractRequest) => Promise<ExtractedCoverageFields>;
   classifyIssue?: (input: ClassifyIssueRequest) => Promise<IssueClassification>;
   extractClaim?: (input: ClaimExtractRequest) => Promise<ExtractedClaimFields>;
   investigateBilling?: (input: InvestigateBillingRequest) => Promise<BillingInvestigation>;
@@ -552,6 +555,122 @@ export async function extractVisitDraft(
     clinicians: clinicians.map((person) => ({ displayName: person.displayName, role: person.role })),
   });
   return { ok: true, draft: visitDraftFromExtraction(extracted, patients), persisted: false };
+}
+
+export async function extractCoverageDraft(
+  ctx: AppContext,
+  actor: Actor,
+  input: { filename: string; mimeType: string; bytes: Uint8Array },
+) {
+  requireApproved(actor);
+  const mimeType = inferMimeType(input.filename, input.mimeType);
+  if (!ALLOWED_DOCUMENT_TYPES[mimeType]) {
+    throw new HttpError(422, "unsupported_type", "Upload a PDF, JPEG, PNG, or WebP file.");
+  }
+  if (input.bytes.byteLength === 0) {
+    throw new HttpError(422, "empty_file", "Choose a file to upload.");
+  }
+  if (input.bytes.byteLength > MAX_UPLOAD_BYTES) {
+    throw new HttpError(422, "file_too_large", "Use a file of 4 MB or smaller.");
+  }
+  const state = await requireHouseholdState(ctx.db, actor.id);
+  await requireAdmin(ctx.db, actor.id, state.householdId!, ["owner", "admin"]);
+  const people = await ctx.db.select().from(patient).where(eq(patient.householdId, state.householdId!));
+  const extractor = ctx.extractCoverage ?? extractCoverageFields;
+  const extracted = await extractor({
+    filename: safeFilename(input.filename),
+    mimeType,
+    bytes: input.bytes,
+    patients: people.map((person) => ({ id: person.id, givenName: person.givenName, familyName: person.familyName })),
+  });
+  return { ok: true, draft: coverageDraftFromExtraction(extracted, people), persisted: false };
+}
+
+export async function attachCoverageDocument(
+  ctx: AppContext,
+  actor: Actor,
+  coverageId: string,
+  input: { filename: string; mimeType: string; bytes: Uint8Array },
+) {
+  requireApproved(actor);
+  if (!isUuid(coverageId)) throw new HttpError(404, "not_found", "That coverage record was not found.");
+  const [record] = await ctx.db.select().from(coverage).where(eq(coverage.id, coverageId)).limit(1);
+  if (!record) throw new HttpError(404, "not_found", "That coverage record was not found.");
+  await requireAdmin(ctx.db, actor.id, record.householdId, ["owner", "admin"]);
+  if (!ctx.storage.available) {
+    throw new HttpError(503, "storage_unconfigured", "Document storage is not configured yet. Coverage details are still saved.");
+  }
+  const mimeType = inferMimeType(input.filename, input.mimeType);
+  if (!ALLOWED_DOCUMENT_TYPES[mimeType]) {
+    throw new HttpError(422, "unsupported_type", "Upload a PDF, JPEG, PNG, or WebP file.");
+  }
+  if (input.bytes.byteLength === 0) {
+    throw new HttpError(422, "empty_file", "Choose a file to upload.");
+  }
+  if (input.bytes.byteLength > MAX_UPLOAD_BYTES) {
+    throw new HttpError(422, "file_too_large", "Use a file of 4 MB or smaller.");
+  }
+  const links = await ctx.db.select().from(coveragePatient).where(eq(coveragePatient.coverageId, record.id));
+  const patientId = record.subscriberPatientId ?? links[0]?.patientId;
+  if (!patientId) {
+    throw new HttpError(422, "invalid_fields", "Choose a household member before storing this coverage document.", {
+      subscriberPatientId: "Choose a household member before storing this coverage document.",
+    });
+  }
+  const filename = safeFilename(input.filename);
+  const checksumSha256 = createHash("sha256").update(input.bytes).digest("hex");
+  const [existing] = await ctx.db
+    .select({
+      id: uploadedDocument.id,
+      kind: uploadedDocument.kind,
+      originalFilename: uploadedDocument.originalFilename,
+      mimeType: uploadedDocument.mimeType,
+      byteSize: uploadedDocument.byteSize,
+      createdAt: uploadedDocument.createdAt,
+      dueOn: uploadedDocument.dueOn,
+      statedProvider: uploadedDocument.statedProvider,
+      memberNote: uploadedDocument.memberNote,
+    })
+    .from(uploadedDocument)
+    .innerJoin(coverageDocument, eq(coverageDocument.documentId, uploadedDocument.id))
+    .where(and(eq(coverageDocument.coverageId, record.id), eq(uploadedDocument.checksumSha256, checksumSha256)))
+    .limit(1);
+  if (existing) {
+    return { ok: true, document: documentSummary(existing), duplicate: true };
+  }
+  const id = randomUUID();
+  const storagePath = `${patientId}/coverage/${record.id}/${id}/${filename}`;
+  await ctx.storage.put(storagePath, input.bytes, mimeType);
+  await ctx.db.insert(uploadedDocument).values({
+    id,
+    patientId,
+    householdId: record.householdId,
+    kind: "id_card",
+    originalFilename: filename,
+    mimeType,
+    byteSize: input.bytes.byteLength,
+    storageBucket: VISIT_DOCUMENT_BUCKET,
+    storagePath,
+    checksumSha256,
+    status: "stored",
+    uploadedByUserId: actor.id,
+    createdAt: ctx.now(),
+    updatedAt: ctx.now(),
+  });
+  await ctx.db.insert(coverageDocument).values({
+    coverageId: record.id,
+    documentId: id,
+    createdAt: ctx.now(),
+  });
+  await writeAudit(ctx.db, ctx.now(), {
+    actorUserId: actor.id,
+    householdId: record.householdId,
+    eventName: "coverage_document_uploaded",
+    entityType: "uploaded_document",
+    entityId: id,
+  });
+  const [stored] = await ctx.db.select().from(uploadedDocument).where(eq(uploadedDocument.id, id)).limit(1);
+  return { ok: true, document: stored ? documentSummary(stored) : { id }, duplicate: false };
 }
 
 export async function getVisit(ctx: AppContext, actor: Actor, visitId: string) {
@@ -1900,9 +2019,20 @@ async function loadCoverageViews(db: Database, householdId: string, includeMembe
       claimsUrl: record.claimsUrl,
       providerSupportPhone: record.providerSupportPhone,
       version: record.version,
+      documents: await loadCoverageDocuments(db, record.id),
     });
   }
   return views;
+}
+
+async function loadCoverageDocuments(db: Database, coverageId: string) {
+  const links = await db.select().from(coverageDocument).where(eq(coverageDocument.coverageId, coverageId));
+  const files = [];
+  for (const link of links) {
+    const [file] = await db.select().from(uploadedDocument).where(eq(uploadedDocument.id, link.documentId)).limit(1);
+    if (file) files.push(documentSummary(file));
+  }
+  return files;
 }
 
 async function householdAdminView(db: Database, actor: Actor, householdId: string, adminRole: string) {
@@ -2103,6 +2233,100 @@ function canonicalJson(value: unknown): string {
     return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
   }
   return JSON.stringify(value);
+}
+
+function coverageDraftFromExtraction(
+  extracted: ExtractedCoverageFields,
+  patients: Array<{ id: string; givenName: string; familyName: string }>,
+) {
+  const warnings: string[] = [];
+  const subscriber = matchPatient(extracted.subscriberName, patients);
+  if (extracted.subscriberName && subscriber.warning) warnings.push(subscriber.warning);
+  if (!extracted.subscriberName) warnings.push("No member name was read. Enter the member name before saving.");
+  if (!extracted.memberId) warnings.push("No member ID was read. Enter the member ID before saving.");
+  if (!extracted.groupNumber) warnings.push("No group ID was read. Enter the group ID before saving.");
+  const start = dateFromExtract(extracted.startDate, "start date", warnings);
+  const end = dateFromExtract(extracted.endDate, "end date", warnings);
+  const coveredPatientIds = new Set<string>();
+  if (subscriber.patientId) coveredPatientIds.add(subscriber.patientId);
+  for (const name of extracted.coveredPatientNames ?? []) {
+    const needle = normalizePersonName(name);
+    const found = patients.find((person) => {
+      const full = normalizePersonName(`${person.givenName} ${person.familyName}`);
+      return full === needle || full.includes(needle) || needle.includes(full);
+    });
+    if (found) coveredPatientIds.add(found.id);
+  }
+  return {
+    clientKey: randomUUID(),
+    insurer: extracted.insurer ?? "",
+    planName: extracted.planName ?? "",
+    subscriberName: extracted.subscriberName ?? "",
+    subscriberPatientId: subscriber.patientId,
+    memberId: extracted.memberId ?? "",
+    groupNumber: extracted.groupNumber ?? "",
+    startState: start.state,
+    startValue: start.value,
+    endState: end.state,
+    endValue: end.value,
+    coveredPatientIds: Array.from(coveredPatientIds),
+    benefits: {
+      deductible: moneyFromExtract(extracted.deductibleUsd, "in-network individual deductible", warnings),
+      innFamilyDeductible: moneyFromExtract(extracted.innFamilyDeductibleUsd, "in-network family deductible", warnings),
+      officeVisitCopay: moneyFromExtract(extracted.officeVisitCopayUsd, "office visit copay", warnings),
+      specialistCopay: moneyFromExtract(extracted.specialistCopayUsd, "specialist copay", warnings),
+      urgentCareCopay: moneyFromExtract(extracted.urgentCareCopayUsd, "urgent care copay", warnings),
+      emergencyCopay: moneyFromExtract(extracted.emergencyCopayUsd, "emergency copay", warnings),
+      outOfPocketMax: moneyFromExtract(extracted.outOfPocketMaxUsd, "in-network individual out-of-pocket max", warnings),
+      innFamilyOutOfPocketMax: moneyFromExtract(
+        extracted.innFamilyOutOfPocketMaxUsd,
+        "in-network family out-of-pocket max",
+        warnings,
+      ),
+      coinsurance: percentFromExtract(extracted.coinsurancePercent, warnings),
+    },
+    memberServicesName: extracted.memberServicesName ?? "",
+    memberServicesPhone: extracted.memberServicesPhone ?? "",
+    memberServicesUrl: extracted.memberServicesUrl ?? "",
+    rxBin: extracted.rxBin ?? "",
+    rxPcn: extracted.rxPcn ?? "",
+    rxGrp: extracted.rxGrp ?? "",
+    pharmacyWebsiteUrl: extracted.pharmacyWebsiteUrl ?? "",
+    pharmacyMemberServicesPhone: extracted.pharmacyMemberServicesPhone ?? "",
+    pharmacyPhone: extracted.pharmacyPhone ?? "",
+    claimsAddress: extracted.claimsAddress ?? "",
+    claimsPhone: extracted.claimsPhone ?? "",
+    claimsUrl: extracted.claimsUrl ?? "",
+    providerSupportPhone: extracted.providerSupportPhone ?? "",
+    warnings,
+  };
+}
+
+function dateFromExtract(value: string | null, label: string, warnings: string[]) {
+  if (!value) return { state: "unknown" as const, value: "" };
+  if (!isRealDate(value)) {
+    warnings.push(`A ${label} was read but it was not a real calendar date.`);
+    return { state: "unknown" as const, value: "" };
+  }
+  return { state: "known" as const, value };
+}
+
+function moneyFromExtract(value: string | null, label: string, warnings: string[]): PlanBenefits["deductible"] {
+  if (!value) return { state: "unknown" };
+  if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+    warnings.push(`A ${label} was read but it was not a dollar amount.`);
+    return { state: "unknown" };
+  }
+  return { state: "known", amountUsd: value };
+}
+
+function percentFromExtract(value: number | null, warnings: string[]): PlanBenefits["coinsurance"] {
+  if (value === null || Number.isNaN(value)) return { state: "unknown" };
+  if (value < 0 || value > 100) {
+    warnings.push("Coinsurance was read but it was not between 0 and 100.");
+    return { state: "unknown" };
+  }
+  return { state: "known", percent: value };
 }
 
 function visitDraftFromExtraction(
