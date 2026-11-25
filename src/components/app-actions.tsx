@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { api } from "@/lib/api";
 import { TextField } from "@/components/shell";
+import { DocumentOptionalDetails, DocumentTrustNote } from "@/components/document-upload";
 import { DOCUMENT_KINDS } from "@/server/domain/validation";
 
 export function InvitationActions({ invitation }: { invitation: { id: string; status: string } | null }) {
@@ -200,6 +201,8 @@ export function DocumentUploadForm({ visitId, storageConfigured }: { visitId: st
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const [fileCount, setFileCount] = useState(0);
+  const [kind, setKind] = useState("bill");
+  const [detailsKey, setDetailsKey] = useState(0);
   if (!storageConfigured) {
     return <p className="muted">Visit details are saved. Document storage is not configured yet.</p>;
   }
@@ -231,11 +234,13 @@ export function DocumentUploadForm({ visitId, storageConfigured }: { visitId: st
         }
         form.reset();
         setFileCount(0);
+        setKind("bill");
+        setDetailsKey((current) => current + 1);
         router.refresh();
       }}
     >
       <label htmlFor="kind">Document type</label>
-      <select id="kind" name="kind" required defaultValue="bill">
+      <select id="kind" name="kind" required value={kind} onChange={(event) => setKind(event.target.value)}>
         {DOCUMENT_KINDS.map((item) => (
           <option key={item.value} value={item.value}>{item.label}</option>
         ))}
@@ -252,6 +257,8 @@ export function DocumentUploadForm({ visitId, storageConfigured }: { visitId: st
       />
       <p className="muted">Select more than one file of the same type, such as two facility bills. To add an adjusted bill, choose Adjusted bill and upload it separately.</p>
       {fileCount > 1 ? <p role="status">{fileCount} files selected.</p> : null}
+      <DocumentTrustNote />
+      <DocumentOptionalDetails key={detailsKey} showEob={kind !== "eob"} />
       {message ? <p role="status">{message}</p> : null}
       <button className="primary" type="submit" disabled={pending}>
         {pending ? "Uploading" : fileCount > 1 ? `Upload ${fileCount} files` : "Upload"}

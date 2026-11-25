@@ -451,6 +451,9 @@ export const uploadedDocument = pgTable(
     storagePath: text("storage_path").notNull().unique(),
     checksumSha256: text("checksum_sha256").notNull(),
     status: text("status").notNull().default("stored"),
+    dueOn: date("due_on", { mode: "string" }),
+    statedProvider: text("stated_provider"),
+    memberNote: text("member_note"),
     uploadedByUserId: text("uploaded_by_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),

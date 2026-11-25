@@ -72,12 +72,18 @@ export default async function VisitPage({ params }: { params: Promise<{ visitId:
               <div className="stack" key={group.value}>
                 <h3>{group.label}</h3>
                 <ul className="list">
-                  {group.files.map((file) => (
-                    <li className="split" key={file.id}>
-                      <span>{file.filename}</span>
-                      <a href={`/api/documents/${file.id}`}>Download</a>
-                    </li>
-                  ))}
+                  {group.files.map((file) => {
+                    const meta = documentMeta(file);
+                    return (
+                      <li className="stack" key={file.id}>
+                        <div className="split">
+                          <span>{file.filename}</span>
+                          <a href={`/api/documents/${file.id}`}>Download</a>
+                        </div>
+                        {meta ? <p className="muted">{meta}</p> : null}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))
@@ -113,9 +119,28 @@ function medicationKindLabel(value: string) {
   return MEDICATION_KINDS.find((item) => item.value === value)?.label ?? value;
 }
 
-function groupedDocuments(documents: Array<{ id: string; kind: string; filename: string }>) {
+function groupedDocuments(
+  documents: Array<{
+    id: string;
+    kind: string;
+    filename: string;
+    dueOn?: string | null;
+    statedProvider?: string | null;
+    memberNote?: string | null;
+  }>,
+) {
   return DOCUMENT_KINDS.map((kind) => ({
     ...kind,
     files: documents.filter((file) => file.kind === kind.value),
   })).filter((group) => group.files.length > 0);
+}
+
+function documentMeta(file: { dueOn?: string | null; statedProvider?: string | null; memberNote?: string | null }) {
+  return [
+    file.dueOn ? `Due ${file.dueOn}` : null,
+    file.statedProvider,
+    file.memberNote,
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join(" · ");
 }

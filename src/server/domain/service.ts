@@ -56,6 +56,7 @@ import {
   assertRealDate,
   UNKNOWN_PLAN_BENEFITS,
   coverageSaveSchema,
+  documentDetailsSchema,
   documentKindSchema,
   familyInputSchema,
   isRealDate,
@@ -748,17 +749,28 @@ export async function attachDocuments(
   ctx: AppContext,
   actor: Actor,
   visitId: string,
-  input: { kind: unknown; files: Array<{ filename: string; mimeType: string; bytes: Uint8Array }> },
+  input: {
+    kind: unknown;
+    files: Array<{ filename: string; mimeType: string; bytes: Uint8Array }>;
+    details?: unknown;
+    companionFiles?: Array<{ kind: unknown; filename: string; mimeType: string; bytes: Uint8Array }>;
+  },
 ) {
+  const companionFiles = input.companionFiles ?? [];
   if (input.files.length === 0) {
     throw new HttpError(422, "empty_file", "Choose a file to upload.");
   }
-  if (input.files.length > MAX_VISIT_FILES_PER_UPLOAD) {
+  if (input.files.length + companionFiles.length > MAX_VISIT_FILES_PER_UPLOAD) {
     throw new HttpError(422, "too_many_files", `Upload ${MAX_VISIT_FILES_PER_UPLOAD} files or fewer at a time.`);
   }
+  const details = parseDocumentDetails(input.details);
   const documents = [];
   for (const file of input.files) {
-    const attached = await attachDocument(ctx, actor, visitId, { kind: input.kind, ...file });
+    const attached = await attachDocument(ctx, actor, visitId, { kind: input.kind, details, ...file });
+    documents.push(attached.document);
+  }
+  for (const file of companionFiles) {
+    const attached = await attachDocument(ctx, actor, visitId, { details, ...file });
     documents.push(attached.document);
   }
   return { ok: true, document: documents[0], documents };
@@ -768,11 +780,18 @@ export async function attachDocument(
   ctx: AppContext,
   actor: Actor,
   visitId: string,
-  input: { kind: unknown; filename: string; mimeType: string; bytes: Uint8Array },
+  input: {
+    kind: unknown;
+    filename: string;
+    mimeType: string;
+    bytes: Uint8Array;
+    details?: { dueOn: string | null; statedProvider: string | null; memberNote: string | null };
+  },
 ) {
   requireApproved(actor);
   if (!isUuid(visitId)) throw new HttpError(404, "not_found", "That visit was not found.");
   const kind = parseInput(documentKindSchema, input.kind);
+  const details = input.details ?? parseDocumentDetails(undefined);
   const [row] = await ctx.db.select().from(visit).where(eq(visit.id, visitId)).limit(1);
   if (!row) throw new HttpError(404, "not_found", "That visit was not found.");
   const decision = await decidePatientAccess(ctx.db, actor, row.patientId, "records.write", ctx.now());
@@ -800,6 +819,9 @@ export async function attachDocument(
       mimeType: uploadedDocument.mimeType,
       byteSize: uploadedDocument.byteSize,
       createdAt: uploadedDocument.createdAt,
+      dueOn: uploadedDocument.dueOn,
+      statedProvider: uploadedDocument.statedProvider,
+      memberNote: uploadedDocument.memberNote,
     })
     .from(uploadedDocument)
     .innerJoin(visitDocument, eq(visitDocument.documentId, uploadedDocument.id))
@@ -823,6 +845,9 @@ export async function attachDocument(
     storagePath,
     checksumSha256,
     status: "stored",
+    dueOn: details.dueOn,
+    statedProvider: details.statedProvider,
+    memberNote: details.memberNote,
     uploadedByUserId: actor.id,
     createdAt: ctx.now(),
     updatedAt: ctx.now(),
@@ -2209,6 +2234,15 @@ async function upsertHouseholdClinician(
   });
 }
 
+function parseDocumentDetails(raw: unknown) {
+  const parsed = parseInput(documentDetailsSchema, raw ?? {});
+  return {
+    dueOn: parsed.dueOn ? assertRealDate(parsed.dueOn, "dueOn") : null,
+    statedProvider: parsed.statedProvider,
+    memberNote: parsed.memberNote,
+  };
+}
+
 function documentSummary(file: {
   id: string;
   kind: string;
@@ -2216,6 +2250,9 @@ function documentSummary(file: {
   mimeType: string;
   byteSize: number;
   createdAt: Date;
+  dueOn?: string | null;
+  statedProvider?: string | null;
+  memberNote?: string | null;
 }) {
   return {
     id: file.id,
@@ -2224,6 +2261,9 @@ function documentSummary(file: {
     mimeType: file.mimeType,
     byteSize: file.byteSize,
     createdAt: file.createdAt.toISOString(),
+    dueOn: file.dueOn ?? null,
+    statedProvider: file.statedProvider ?? null,
+    memberNote: file.memberNote ?? null,
   };
 }
 

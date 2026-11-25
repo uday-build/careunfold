@@ -57,6 +57,13 @@
       "when": 1762900000000,
       "tag": "0007_rls_deny_api_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1764028800000,
+      "tag": "0008_document_optional_details",
+      "breakpoints": true
     }
   ]
 }

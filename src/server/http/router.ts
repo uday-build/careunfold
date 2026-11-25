@@ -196,7 +196,7 @@ async function route(request: Request, ctx: AppContext, path: string, actor: Act
   const visitDocuments = path.match(/^\/api\/(?:visits|cases)\/([^/]+)\/documents$/);
   if (visitDocuments && request.method === "POST") {
     const form = await request.formData();
-    const uploaded = form.getAll("file").filter((item): item is File => item instanceof File);
+    const uploaded = formFiles(form, "file");
     if (uploaded.length === 0) {
       throw new HttpError(422, "empty_file", "Choose a file to upload.");
     }
@@ -208,11 +208,26 @@ async function route(request: Request, ctx: AppContext, path: string, actor: Act
         bytes: new Uint8Array(await file.arrayBuffer()),
       });
     }
+    const companionFiles = [];
+    for (const file of formFiles(form, "eob")) {
+      companionFiles.push({
+        kind: "eob" as const,
+        filename: file.name,
+        mimeType: file.type || "application/octet-stream",
+        bytes: new Uint8Array(await file.arrayBuffer()),
+      });
+    }
     return json(
       201,
       await attachDocuments(ctx, requireActor(actor), visitDocuments[1], {
         kind: form.get("kind"),
         files,
+        details: {
+          dueOn: formText(form, "dueOn"),
+          statedProvider: formText(form, "statedProvider"),
+          memberNote: formText(form, "memberNote"),
+        },
+        companionFiles,
       }),
     );
   }
@@ -267,6 +282,15 @@ async function readJson(request: Request): Promise<unknown> {
   } catch {
     throw new HttpError(400, "invalid_json", "The request could not be read.");
   }
+}
+
+function formText(form: FormData, name: string) {
+  const value = form.get(name);
+  return typeof value === "string" ? value : "";
+}
+
+function formFiles(form: FormData, name: string) {
+  return form.getAll(name).filter((item): item is File => item instanceof File && item.size > 0);
 }
 
 function json(status: number, body: unknown): Response {

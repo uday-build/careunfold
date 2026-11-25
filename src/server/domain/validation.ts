@@ -277,6 +277,30 @@ export type DocumentKind = (typeof DOCUMENT_KINDS)[number]["value"];
 
 export const documentKindSchema = z.enum(DOCUMENT_KINDS.map((item) => item.value) as [DocumentKind, ...DocumentKind[]]);
 
+export const documentDetailsSchema = z.object({
+  dueOn: z
+    .string()
+    .trim()
+    .max(10)
+    .optional()
+    .nullable()
+    .transform((value) => (value ? value : null)),
+  statedProvider: z
+    .string()
+    .trim()
+    .max(80, "Use 80 characters or fewer.")
+    .optional()
+    .nullable()
+    .transform((value) => (value ? value : null)),
+  memberNote: z
+    .string()
+    .trim()
+    .max(500, "Use 500 characters or fewer.")
+    .optional()
+    .nullable()
+    .transform((value) => (value ? value : null)),
+});
+
 export const visitAskSchema = z.object({
   request: z
     .string()

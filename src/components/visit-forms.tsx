@@ -6,6 +6,12 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Notice, TextArea, TextField } from "@/components/shell";
 import {
+  DocumentOptionalDetails,
+  DocumentTrustNote,
+  EMPTY_DOCUMENT_DETAILS,
+  type DocumentOptionalDetailsValue,
+} from "@/components/document-upload";
+import {
   ALLERGY_SEVERITIES,
   DOCUMENT_KINDS,
   ENCOUNTER_MODALITIES,
@@ -55,6 +61,8 @@ export function VisitForm({
   warnings = [],
   extracted,
   pendingFiles = [],
+  pendingDetails = EMPTY_DOCUMENT_DETAILS,
+  pendingEobFiles = [],
   documentKind,
   storageConfigured = false,
 }: {
@@ -64,6 +72,8 @@ export function VisitForm({
   warnings?: string[];
   extracted?: boolean;
   pendingFiles?: File[];
+  pendingDetails?: DocumentOptionalDetailsValue;
+  pendingEobFiles?: File[];
   documentKind?: string;
   storageConfigured?: boolean;
 }) {
@@ -116,6 +126,10 @@ export function VisitForm({
           const form = new FormData();
           form.set("kind", documentKind || "bill");
           for (const file of pendingFiles) form.append("file", file);
+          if (pendingDetails.dueOn) form.set("dueOn", pendingDetails.dueOn);
+          if (pendingDetails.statedProvider) form.set("statedProvider", pendingDetails.statedProvider);
+          if (pendingDetails.memberNote) form.set("memberNote", pendingDetails.memberNote);
+          for (const file of pendingEobFiles) form.append("eob", file);
           try {
             await fetch(`/api/visits/${result.data.visit.id}/documents`, {
               method: "POST",
@@ -285,6 +299,8 @@ export function VisitExtractForm({
   const [message, setMessage] = useState("");
   const [kind, setKind] = useState("bill");
   const [files, setFiles] = useState<File[]>([]);
+  const [details, setDetails] = useState<DocumentOptionalDetailsValue>(EMPTY_DOCUMENT_DETAILS);
+  const [eobFiles, setEobFiles] = useState<File[]>([]);
   const [draft, setDraft] = useState<(VisitDraft & { warnings: string[] }) | null>(null);
 
   if (draft) {
@@ -302,10 +318,12 @@ export function VisitExtractForm({
           warnings={draft.warnings}
           extracted
           pendingFiles={files}
+          pendingDetails={details}
+          pendingEobFiles={eobFiles}
           documentKind={kind}
           storageConfigured={storageConfigured}
         />
-        <button className="secondary" type="button" onClick={() => { setDraft(null); setMessage(""); }}>
+        <button className="secondary" type="button" onClick={() => { setDraft(null); setMessage(""); setDetails(EMPTY_DOCUMENT_DETAILS); setEobFiles([]); }}>
           Choose different documents
         </button>
       </div>
@@ -373,6 +391,14 @@ export function VisitExtractForm({
       />
       <p className="muted">Supported files: PDF, JPEG, PNG, or WebP. The first file is read into the draft. Extra files of this type are stored with the visit after you confirm.</p>
       {files.length > 1 ? <p role="status">{files.length} files selected. The first file is used to draft the visit.</p> : null}
+      <DocumentTrustNote />
+      <DocumentOptionalDetails
+        value={details}
+        onChange={setDetails}
+        eobFiles={eobFiles}
+        onEobFiles={setEobFiles}
+        showEob={kind !== "eob"}
+      />
       {message ? <p className="form-error" role="alert">Error: {message}</p> : null}
       <div className="actions">
         <button className="primary" type="submit" disabled={pending || patients.length === 0}>{pending ? "Reading" : "Read document"}</button>

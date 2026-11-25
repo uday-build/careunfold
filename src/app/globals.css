@@ -398,6 +398,46 @@ fieldset.card > legend {
 
 .field { display: grid; gap: 8px; }
 
+.trust-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--color-secondary);
+  font-size: 0.875rem;
+}
+
+.trust-lock {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.optional-details {
+  border: var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  background: var(--color-surface);
+}
+
+.optional-details summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.optional-details[open] summary {
+  margin-bottom: 12px;
+}
+
+.optional-details textarea {
+  min-height: 5rem;
+}
+
 label {
   font-size: 0.8125rem;
   font-weight: 500;

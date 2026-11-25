@@ -235,6 +235,80 @@ describe("visits and documents", () => {
     expect(opened.data.documents).toHaveLength(1);
   });
 
+  it("stores an optional due date, provider, note, and companion EOB with the bill", async () => {
+    const account = await completeSelf("cases-details@example.com");
+    const created = await api(ctx, "/api/visits", {
+      method: "POST",
+      cookie: account.cookie,
+      idempotencyKey: "visit-details",
+      body: { patientId: account.patientId, visitDate: "2026-10-03" },
+    });
+    const form = new FormData();
+    form.set("kind", "bill");
+    form.set("dueOn", "2026-11-30");
+    form.set("statedProvider", "Harbor Clinic");
+    form.set("memberNote", "Ask about the facility fee.");
+    form.set("file", new File([new Uint8Array([37, 80, 68, 70, 45, 52])], "harbor-bill.pdf", { type: "application/pdf" }));
+    form.set("eob", new File([new Uint8Array([37, 80, 68, 70, 45, 53])], "harbor-eob.pdf", { type: "application/pdf" }));
+    const uploaded = await dispatch(
+      new Request(`${origin}/api/visits/${created.data.visit.id}/documents`, {
+        method: "POST",
+        headers: { origin, cookie: account.cookie },
+        body: form,
+      }),
+      ctx,
+    );
+    expect(uploaded.status).toBe(201);
+    const body = await uploaded.json();
+    expect(body.documents).toEqual([
+      expect.objectContaining({
+        kind: "bill",
+        filename: "harbor-bill.pdf",
+        dueOn: "2026-11-30",
+        statedProvider: "Harbor Clinic",
+        memberNote: "Ask about the facility fee.",
+      }),
+      expect.objectContaining({
+        kind: "eob",
+        filename: "harbor-eob.pdf",
+        dueOn: "2026-11-30",
+        statedProvider: "Harbor Clinic",
+      }),
+    ]);
+    const opened = await api(ctx, `/api/visits/${created.data.visit.id}`, { cookie: account.cookie });
+    expect(opened.data.documents.map((file: { kind: string; filename: string }) => `${file.kind}:${file.filename}`)).toEqual([
+      "bill:harbor-bill.pdf",
+      "eob:harbor-eob.pdf",
+    ]);
+  });
+
+  it("rejects an invalid optional due date without storing the document", async () => {
+    const account = await completeSelf("cases-baddate@example.com");
+    const created = await api(ctx, "/api/visits", {
+      method: "POST",
+      cookie: account.cookie,
+      idempotencyKey: "visit-baddate",
+      body: { patientId: account.patientId, visitDate: "2026-10-03" },
+    });
+    const form = new FormData();
+    form.set("kind", "bill");
+    form.set("dueOn", "2026-13-40");
+    form.set("file", new File([new Uint8Array([37, 80, 68, 70, 45, 54])], "harbor-bill.pdf", { type: "application/pdf" }));
+    const uploaded = await dispatch(
+      new Request(`${origin}/api/visits/${created.data.visit.id}/documents`, {
+        method: "POST",
+        headers: { origin, cookie: account.cookie },
+        body: form,
+      }),
+      ctx,
+    );
+    expect(uploaded.status).toBe(422);
+    const body = await uploaded.json();
+    expect(body.error.fields.dueOn).toContain("real calendar date");
+    const opened = await api(ctx, `/api/visits/${created.data.visit.id}`, { cookie: account.cookie });
+    expect(opened.data.documents).toHaveLength(0);
+  });
+
   it("does not let household administration stand in for record access", async () => {
     const caregiver = await register(ctx, "cases-caregiver@example.com");
     await saveProfile(ctx, caregiver.cookie, "Casey Quinn", "someone_else");
